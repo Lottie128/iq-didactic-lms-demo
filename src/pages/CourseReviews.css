@@ -1,0 +1,179 @@
+.reviews-section {
+  margin-top: 48px;
+}
+
+.reviews-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.reviews-header h3 {
+  font-size: 24px;
+}
+
+.reviews-overview {
+  padding: 24px;
+  border-radius: 16px;
+  display: flex;
+  gap: 48px;
+  margin-bottom: 24px;
+}
+
+.rating-summary {
+  min-width: 200px;
+}
+
+.avg-rating {
+  text-align: center;
+}
+
+.avg-rating h2 {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.avg-rating p {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-top: 8px;
+}
+
+.rating-breakdown {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.star-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  min-width: 60px;
+}
+
+.rating-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rating-fill {
+  height: 100%;
+  background: #fbbf24;
+  border-radius: inherit;
+  transition: width 0.5s ease;
+}
+
+.rating-count {
+  font-size: 13px;
+  opacity: 0.7;
+  min-width: 30px;
+  text-align: right;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.review-form {
+  padding: 24px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.review-form h4 {
+  margin-bottom: 20px;
+}
+
+.star-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-card {
+  padding: 20px;
+  border-radius: 16px;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reviewer-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.review-date {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.review-comment {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  opacity: 0.9;
+}
+
+.review-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.helpful-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.helpful-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .reviews-overview {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .rating-summary {
+    min-width: auto;
+  }
+}
