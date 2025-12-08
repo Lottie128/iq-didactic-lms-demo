@@ -1,55 +1,171 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Filter, Users, UserPlus, Edit, Trash2, LogOut, Download, Mail } from 'lucide-react';
+import { ArrowLeft, Search, Filter, UserPlus, Edit, Trash2, Mail, LogOut, X, Save, MoreVertical, Shield, CheckCircle, XCircle } from 'lucide-react';
+import NotificationCenter from '../components/NotificationCenter';
+import ThemeToggler from '../components/ThemeToggler';
 import './UserManagement.css';
 
 const UserManagement = ({ user, onLogout }) => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  
+  const [users, setUsers] = useState([
+    {
+      id: 1,
+      name: 'Sarah Chen',
+      email: 'sarah.chen@example.com',
+      role: 'student',
+      status: 'active',
+      enrolled: 5,
+      completed: 2,
+      joinDate: '2024-01-15',
+      lastActive: '2024-12-08'
+    },
+    {
+      id: 2,
+      name: 'Dr. Alex Teacher',
+      email: 'alex.teacher@example.com',
+      role: 'teacher',
+      status: 'active',
+      courses: 8,
+      students: 2130,
+      joinDate: '2023-06-10',
+      lastActive: '2024-12-09'
+    },
+    {
+      id: 3,
+      name: 'Mike Johnson',
+      email: 'mike.j@example.com',
+      role: 'student',
+      status: 'active',
+      enrolled: 3,
+      completed: 1,
+      joinDate: '2024-03-22',
+      lastActive: '2024-12-07'
+    },
+    {
+      id: 4,
+      name: 'Priya Sharma',
+      email: 'priya.sharma@example.com',
+      role: 'student',
+      status: 'inactive',
+      enrolled: 2,
+      completed: 0,
+      joinDate: '2024-05-18',
+      lastActive: '2024-11-10'
+    },
+    {
+      id: 5,
+      name: 'Prof. Sarah Chen',
+      email: 'prof.chen@example.com',
+      role: 'teacher',
+      status: 'active',
+      courses: 6,
+      students: 1850,
+      joinDate: '2023-08-05',
+      lastActive: '2024-12-08'
+    },
+    {
+      id: 6,
+      name: 'Admin User',
+      email: 'admin@iqdidactic.com',
+      role: 'admin',
+      status: 'active',
+      joinDate: '2023-01-01',
+      lastActive: '2024-12-09'
+    }
+  ]);
 
-  const users = [
-    { id: 1, name: 'Alex Student', email: 'alex@iqdidactic.app', role: 'student', status: 'active', courses: 12, joined: '2024-01-15', country: 'USA' },
-    { id: 2, name: 'Jordan Teacher', email: 'jordan@iqdidactic.app', role: 'teacher', status: 'active', courses: 8, joined: '2023-11-20', country: 'Canada' },
-    { id: 3, name: 'Sarah Chen', email: 'sarah@iqdidactic.app', role: 'teacher', status: 'active', courses: 15, joined: '2023-09-10', country: 'UK' },
-    { id: 4, name: 'Mike Johnson', email: 'mike@iqdidactic.app', role: 'student', status: 'active', courses: 6, joined: '2024-02-28', country: 'Australia' },
-    { id: 5, name: 'Emily Davis', email: 'emily@iqdidactic.app', role: 'student', status: 'inactive', courses: 3, joined: '2024-03-12', country: 'USA' },
-    { id: 6, name: 'Raj Patel', email: 'raj@iqdidactic.app', role: 'teacher', status: 'active', courses: 10, joined: '2023-12-05', country: 'India' },
-    { id: 7, name: 'Lisa Wong', email: 'lisa@iqdidactic.app', role: 'student', status: 'active', courses: 18, joined: '2023-10-22', country: 'Singapore' },
-    { id: 8, name: 'Admin IQ', email: 'admin@iqdidactic.app', role: 'admin', status: 'active', courses: 0, joined: '2023-08-01', country: 'USA' },
-    { id: 9, name: 'Carlos Martinez', email: 'carlos@iqdidactic.app', role: 'student', status: 'active', courses: 9, joined: '2024-01-30', country: 'Mexico' },
-    { id: 10, name: 'Anna Schmidt', email: 'anna@iqdidactic.app', role: 'teacher', status: 'active', courses: 12, joined: '2023-11-15', country: 'Germany' }
-  ];
-
-  const filteredUsers = users.filter(u => {
-    const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         u.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === 'all' || u.role === filterRole;
-    return matchesSearch && matchesRole;
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    role: 'student',
+    password: '',
+    status: 'active'
   });
 
-  const stats = {
-    total: users.length,
-    students: users.filter(u => u.role === 'student').length,
-    teachers: users.filter(u => u.role === 'teacher').length,
-    admins: users.filter(u => u.role === 'admin').length,
-    active: users.filter(u => u.status === 'active').length
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         u.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const handleAddUser = (e) => {
+    e.preventDefault();
+    const newUser = {
+      id: users.length + 1,
+      ...formData,
+      enrolled: 0,
+      completed: 0,
+      courses: 0,
+      students: 0,
+      joinDate: new Date().toISOString().split('T')[0],
+      lastActive: new Date().toISOString().split('T')[0]
+    };
+    setUsers([...users, newUser]);
+    setFormData({ name: '', email: '', role: 'student', password: '', status: 'active' });
+    setShowAddUser(false);
   };
 
-  const handleDelete = (userId) => {
+  const handleEditUser = (e) => {
+    e.preventDefault();
+    setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...formData } : u));
+    setEditingUser(null);
+    setFormData({ name: '', email: '', role: 'student', password: '', status: 'active' });
+  };
+
+  const handleDeleteUser = (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      console.log('Delete user:', userId);
-      alert('User deleted! (Demo only)');
+      setUsers(users.filter(u => u.id !== id));
     }
   };
 
-  const handleEdit = (userId) => {
-    console.log('Edit user:', userId);
-    alert('Edit user functionality (Demo only)');
+  const startEdit = (user) => {
+    setEditingUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      password: '',
+      status: user.status
+    });
+    setShowAddUser(false);
   };
 
-  const handleBulkEmail = () => {
-    alert(`Send email to ${filteredUsers.length} users (Demo only)`);
+  const toggleUserSelection = (id) => {
+    setSelectedUsers(prev => 
+      prev.includes(id) ? prev.filter(uid => uid !== id) : [...prev, id]
+    );
+  };
+
+  const bulkDelete = () => {
+    if (window.confirm(`Delete ${selectedUsers.length} selected users?`)) {
+      setUsers(users.filter(u => !selectedUsers.includes(u.id)));
+      setSelectedUsers([]);
+    }
+  };
+
+  const bulkActivate = () => {
+    setUsers(users.map(u => selectedUsers.includes(u.id) ? { ...u, status: 'active' } : u));
+    setSelectedUsers([]);
+  };
+
+  const bulkDeactivate = () => {
+    setUsers(users.map(u => selectedUsers.includes(u.id) ? { ...u, status: 'inactive' } : u));
+    setSelectedUsers([]);
+  };
+
+  const roleConfig = {
+    student: { color: '#60a5fa', icon: '🎓' },
+    teacher: { color: '#a78bfa', icon: '👨‍🏫' },
+    admin: { color: '#f59e0b', icon: '⚡' }
   };
 
   return (
@@ -63,10 +179,12 @@ const UserManagement = ({ user, onLogout }) => {
           </button>
           <div className="header-title">
             <h2>User Management</h2>
-            <p>Manage students, teachers, and administrators</p>
+            <p>{users.length} total users</p>
           </div>
         </div>
         <nav className="header-nav">
+          <ThemeToggler />
+          <NotificationCenter />
           <div className="user-menu glass">
             <div className="user-avatar">{user.name.charAt(0)}</div>
             <span>{user.name}</span>
@@ -78,134 +196,213 @@ const UserManagement = ({ user, onLogout }) => {
       </header>
 
       <main className="user-mgmt-main fade-in">
-        <section className="mgmt-stats">
-          <div className="stat-card glass">
-            <Users size={24} />
-            <div>
-              <p className="stat-value">{stats.total}</p>
-              <p className="stat-label">Total Users</p>
-            </div>
+        <div className="controls-bar glass">
+          <div className="search-box">
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder="Search users by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <div className="stat-card glass">
-            <div className="role-icon student">S</div>
-            <div>
-              <p className="stat-value">{stats.students}</p>
-              <p className="stat-label">Students</p>
-            </div>
-          </div>
-          <div className="stat-card glass">
-            <div className="role-icon teacher">T</div>
-            <div>
-              <p className="stat-value">{stats.teachers}</p>
-              <p className="stat-label">Teachers</p>
-            </div>
-          </div>
-          <div className="stat-card glass">
-            <div className="role-icon admin">A</div>
-            <div>
-              <p className="stat-value">{stats.admins}</p>
-              <p className="stat-label">Admins</p>
-            </div>
-          </div>
-          <div className="stat-card glass">
-            <div className="status-dot active" />
-            <div>
-              <p className="stat-value">{stats.active}</p>
-              <p className="stat-label">Active</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mgmt-controls glass">
-          <div className="search-filter">
-            <div className="search-box">
-              <Search size={16} />
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <select 
-              className="filter-select"
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-            >
+          <div className="filters">
+            <select className="filter-select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
               <option value="all">All Roles</option>
               <option value="student">Students</option>
               <option value="teacher">Teachers</option>
               <option value="admin">Admins</option>
             </select>
+            <select className="filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
-          <div className="action-buttons">
-            <button className="btn btn-secondary" onClick={handleBulkEmail}>
-              <Mail size={16} />
-              Email All
-            </button>
-            <button className="btn btn-secondary">
-              <Download size={16} />
-              Export CSV
-            </button>
-            <button className="btn btn-primary">
-              <UserPlus size={16} />
-              Add User
-            </button>
-          </div>
-        </section>
+          <button className="btn btn-primary" onClick={() => { setShowAddUser(true); setEditingUser(null); }}>
+            <UserPlus size={16} />
+            Add User
+          </button>
+        </div>
 
-        <section className="users-table glass-strong">
-          <div className="table-header">
-            <div className="col col-user">User</div>
-            <div className="col col-role">Role</div>
-            <div className="col col-status">Status</div>
-            <div className="col col-country">Country</div>
-            <div className="col col-courses">Courses</div>
-            <div className="col col-joined">Joined</div>
-            <div className="col col-actions">Actions</div>
+        {selectedUsers.length > 0 && (
+          <div className="bulk-actions glass">
+            <span>{selectedUsers.length} selected</span>
+            <div className="bulk-btns">
+              <button className="btn btn-secondary" onClick={bulkActivate}>
+                <CheckCircle size={14} />
+                Activate
+              </button>
+              <button className="btn btn-secondary" onClick={bulkDeactivate}>
+                <XCircle size={14} />
+                Deactivate
+              </button>
+              <button className="btn btn-danger" onClick={bulkDelete}>
+                <Trash2 size={14} />
+                Delete
+              </button>
+            </div>
           </div>
-          <div className="table-body">
-            {filteredUsers.map((u) => (
-              <div key={u.id} className="table-row">
-                <div className="col col-user">
-                  <div className="user-avatar-small">{u.name.charAt(0)}</div>
-                  <div>
-                    <p className="user-name">{u.name}</p>
-                    <p className="user-email">{u.email}</p>
-                  </div>
-                </div>
-                <div className="col col-role">
-                  <span className={`role-badge ${u.role}`}>{u.role}</span>
-                </div>
-                <div className="col col-status">
-                  <span className={`status-badge ${u.status}`}>
-                    <span className="status-dot" />
-                    {u.status}
-                  </span>
-                </div>
-                <div className="col col-country">{u.country}</div>
-                <div className="col col-courses">{u.courses}</div>
-                <div className="col col-joined">{u.joined}</div>
-                <div className="col col-actions">
-                  <button className="action-btn" onClick={() => handleEdit(u.id)}>
-                    <Edit size={14} />
-                  </button>
-                  <button className="action-btn delete" onClick={() => handleDelete(u.id)}>
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+        )}
+
+        {(showAddUser || editingUser) && (
+          <div className="user-form-overlay">
+            <div className="user-form glass-strong">
+              <div className="form-header">
+                <h3>{editingUser ? 'Edit User' : 'Add New User'}</h3>
+                <button className="btn-icon" onClick={() => { setShowAddUser(false); setEditingUser(null); }}>
+                  <X size={20} />
+                </button>
               </div>
-            ))}
+              <form onSubmit={editingUser ? handleEditUser : handleAddUser}>
+                <div className="form-field">
+                  <label>Full Name *</label>
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Email Address *</label>
+                  <input
+                    className="input"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Role *</label>
+                  <select
+                    className="input"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  >
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label>Password {editingUser && '(leave blank to keep current)'}</label>
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required={!editingUser}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Status *</label>
+                  <select
+                    className="input"
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div className="form-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => { setShowAddUser(false); setEditingUser(null); }}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    <Save size={16} />
+                    {editingUser ? 'Update User' : 'Create User'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </section>
+        )}
 
-        <div className="table-footer glass">
-          <p>Showing {filteredUsers.length} of {users.length} users</p>
-          <div className="pagination">
-            <button className="btn btn-secondary" disabled>Previous</button>
-            <span>Page 1 of 1</span>
-            <button className="btn btn-secondary" disabled>Next</button>
-          </div>
+        <div className="users-table glass">
+          <table>
+            <thead>
+              <tr>
+                <th width="40">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                    onChange={(e) => setSelectedUsers(e.target.checked ? filteredUsers.map(u => u.id) : [])}
+                  />
+                </th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Stats</th>
+                <th>Joined</th>
+                <th>Last Active</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map(u => (
+                <tr key={u.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.includes(u.id)}
+                      onChange={() => toggleUserSelection(u.id)}
+                    />
+                  </td>
+                  <td>
+                    <div className="user-cell">
+                      <div className="user-avatar-small">{u.name.charAt(0)}</div>
+                      <div>
+                        <p className="user-name">{u.name}</p>
+                        <p className="user-email">{u.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="role-badge" style={{ background: `${roleConfig[u.role].color}20`, color: roleConfig[u.role].color }}>
+                      {roleConfig[u.role].icon} {u.role}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${u.status}`}>
+                      {u.status === 'active' ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                      {u.status}
+                    </span>
+                  </td>
+                  <td>
+                    {u.role === 'student' && (
+                      <span className="stats-text">{u.enrolled} enrolled • {u.completed} completed</span>
+                    )}
+                    {u.role === 'teacher' && (
+                      <span className="stats-text">{u.courses} courses • {u.students} students</span>
+                    )}
+                    {u.role === 'admin' && <span className="stats-text">—</span>}
+                  </td>
+                  <td>{u.joinDate}</td>
+                  <td>{u.lastActive}</td>
+                  <td>
+                    <div className="action-btns">
+                      <button className="btn-icon-small" onClick={() => startEdit(u)} title="Edit">
+                        <Edit size={14} />
+                      </button>
+                      <button className="btn-icon-small" onClick={() => window.location.href = `mailto:${u.email}`} title="Email">
+                        <Mail size={14} />
+                      </button>
+                      <button className="btn-icon-small danger" onClick={() => handleDeleteUser(u.id)} title="Delete">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </main>
     </div>
