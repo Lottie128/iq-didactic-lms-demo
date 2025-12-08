@@ -11,6 +11,7 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Login submitted with role:', role);
     onLogin({
       name: role === 'student' ? 'Alex Student' : role === 'teacher' ? 'Jordan Teacher' : 'Admin IQ',
       role,
@@ -44,6 +45,7 @@ const Login = ({ onLogin }) => {
             {['student', 'teacher', 'admin'].map((r) => (
               <button
                 key={r}
+                type="button"
                 className={`role-pill ${role === r ? 'active' : ''}`}
                 onClick={() => setRole(r)}
               >

@@ -12,6 +12,7 @@ const Signup = ({ onSignup }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Signup submitted with role:', role);
     onSignup({ name, role, email });
   };
 
@@ -41,6 +42,7 @@ const Signup = ({ onSignup }) => {
             {['student', 'teacher', 'admin'].map((r) => (
               <button
                 key={r}
+                type="button"
                 className={`role-pill ${role === r ? 'active' : ''}`}
                 onClick={() => setRole(r)}
               >
