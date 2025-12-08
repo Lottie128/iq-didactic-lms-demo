@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { BookOpen, Clock, Award, TrendingUp, Play, Sparkles, LogOut } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
 import './Dashboard.css';
