@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, Sparkles, TrendingUp, Settings, LogOut, Shield } from 'lucide-react';
+import { Users, BookOpen, Sparkles, TrendingUp, Settings, LogOut, Shield, BarChart3, UserCog, Globe } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
 import './Dashboard.css';
 
@@ -26,7 +26,7 @@ const AdminDashboard = ({ user, onLogout }) => {
             <Sparkles size={16} />
             <span>AI Tools</span>
           </button>
-          <div className="user-menu glass">
+          <div className="user-menu glass" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
             <Shield size={16} />
             <span>{user.name}</span>
           </div>
@@ -43,7 +43,7 @@ const AdminDashboard = ({ user, onLogout }) => {
             <p>Monitor system health and manage platform resources.</p>
           </div>
           <div className="stats-grid">
-            <div className="stat-card glass">
+            <div className="stat-card glass" onClick={() => navigate('/admin/users')} style={{ cursor: 'pointer' }}>
               <Users size={20} />
               <div>
                 <p className="stat-value">{totalStudents.toLocaleString()}</p>
@@ -64,7 +64,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <p className="stat-label">AI Sessions</p>
               </div>
             </div>
-            <div className="stat-card glass">
+            <div className="stat-card glass" onClick={() => navigate('/admin/analytics')} style={{ cursor: 'pointer' }}>
               <TrendingUp size={20} />
               <div>
                 <p className="stat-value">+23%</p>
@@ -75,12 +75,12 @@ const AdminDashboard = ({ user, onLogout }) => {
         </section>
 
         <section className="admin-grid">
-          <div className="admin-card glass-strong scale-in">
+          <div className="admin-card glass-strong scale-in" onClick={() => navigate('/admin/users')} style={{ cursor: 'pointer' }}>
             <div className="admin-card-header">
-              <Users size={24} />
+              <UserCog size={24} />
               <h3>User Management</h3>
             </div>
-            <p>Manage student, teacher, and admin accounts.</p>
+            <p>Manage student, teacher, and admin accounts across all countries.</p>
             <div className="admin-stats">
               <div className="admin-stat">
                 <span className="stat-num">1,847</span>
@@ -95,7 +95,30 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <span className="stat-lbl">Admins</span>
               </div>
             </div>
-            <button className="btn btn-secondary">View All Users</button>
+            <button className="btn btn-secondary" onClick={(e) => { e.stopPropagation(); navigate('/admin/users'); }}>Manage Users</button>
+          </div>
+
+          <div className="admin-card glass-strong scale-in" onClick={() => navigate('/admin/analytics')} style={{ cursor: 'pointer' }}>
+            <div className="admin-card-header">
+              <BarChart3 size={24} />
+              <h3>Analytics & Insights</h3>
+            </div>
+            <p>View platform analytics, country data, gender insights, and AI impact metrics.</p>
+            <div className="admin-stats">
+              <div className="admin-stat">
+                <span className="stat-num">15K+</span>
+                <span className="stat-lbl">Users</span>
+              </div>
+              <div className="admin-stat">
+                <span className="stat-num">7</span>
+                <span className="stat-lbl">Countries</span>
+              </div>
+              <div className="admin-stat">
+                <span className="stat-num">8.9K</span>
+                <span className="stat-lbl">AI Sessions</span>
+              </div>
+            </div>
+            <button className="btn btn-secondary" onClick={(e) => { e.stopPropagation(); navigate('/admin/analytics'); }}>View Analytics</button>
           </div>
 
           <div className="admin-card glass-strong scale-in">
@@ -111,7 +134,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                     <p className="course-item-title">{course.title}</p>
                     <p className="course-item-meta">{course.students} students</p>
                   </div>
-                  <button className="btn-icon">→</button>
+                  <button className="btn-icon" onClick={() => navigate(`/edit-course/${course.id}`)}>→</button>
                 </div>
               ))}
             </div>
@@ -122,7 +145,7 @@ const AdminDashboard = ({ user, onLogout }) => {
               <Sparkles size={24} />
               <h3>AI Analytics</h3>
             </div>
-            <p>Monitor AI teacher usage and performance metrics.</p>
+            <p>Monitor AI teacher usage, proctoring data, and performance metrics by gender.</p>
             <div className="admin-stats">
               <div className="admin-stat">
                 <span className="stat-num">1,240</span>
@@ -132,8 +155,27 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <span className="stat-num">4.8</span>
                 <span className="stat-lbl">Avg Rating</span>
               </div>
+              <div className="admin-stat">
+                <span className="stat-num">+23%</span>
+                <span className="stat-lbl">Female Use</span>
+              </div>
             </div>
             <button className="btn btn-secondary" onClick={() => navigate('/ai-teacher')}>View AI Console</button>
+          </div>
+
+          <div className="admin-card glass-strong scale-in full-width">
+            <div className="admin-card-header">
+              <Globe size={24} />
+              <h3>Global Reach</h3>
+            </div>
+            <p>Platform usage across 7 countries with detailed analytics on demographics and engagement.</p>
+            <div className="country-preview">
+              <div className="country-flag">🇺🇸 USA - 4,521 users</div>
+              <div className="country-flag">🇮🇳 India - 3,240 users (+28%)</div>
+              <div className="country-flag">🇬🇧 UK - 2,180 users</div>
+              <div className="country-flag">🇨🇦 Canada - 1,890 users</div>
+            </div>
+            <button className="btn btn-secondary" onClick={() => navigate('/admin/analytics')}>View Full Report</button>
           </div>
 
           <div className="admin-card glass-strong scale-in">

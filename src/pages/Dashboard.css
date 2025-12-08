@@ -350,6 +350,10 @@
   border-radius: 20px;
 }
 
+.admin-card.full-width {
+  grid-column: 1 / -1;
+}
+
 .admin-card-header {
   display: flex;
   align-items: center;
@@ -458,6 +462,20 @@
   transform: translateX(18px);
 }
 
+.country-preview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.country-flag {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+}
+
 @media (max-width: 768px) {
   .dashboard-header,
   .dashboard-main {
@@ -477,6 +495,10 @@
 
   .courses-grid,
   .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .country-preview {
     grid-template-columns: 1fr;
   }
 }

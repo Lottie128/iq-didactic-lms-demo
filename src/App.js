@@ -11,6 +11,9 @@ import AITeacher from './pages/AITeacher';
 import CreateCourse from './pages/CreateCourse';
 import EditCourse from './pages/EditCourse';
 import UserProfile from './pages/UserProfile';
+import TakeQuiz from './pages/TakeQuiz';
+import AdminAnalytics from './pages/AdminAnalytics';
+import UserManagement from './pages/UserManagement';
 import './App.css';
 
 function App() {
@@ -44,13 +47,26 @@ function App() {
         <Route path="/" element={user ? <Navigate to={`/${user.role}`} replace /> : <Navigate to="/login" replace />} />
         <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <Login onLogin={handleLogin} />} />
         <Route path="/signup" element={user ? <Navigate to={`/${user.role}`} replace /> : <Signup onSignup={handleLogin} />} />
+        
+        {/* Dashboard Routes */}
         <Route path="/student" element={user?.role === 'student' ? <StudentDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/teacher" element={user?.role === 'teacher' ? <TeacherDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/admin" element={user?.role === 'admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        
+        {/* Course Routes */}
         <Route path="/course/:id" element={user ? <CourseView user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/ai-teacher" element={user ? <AITeacher user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/create-course" element={user ? <CreateCourse user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/edit-course/:id" element={user ? <EditCourse user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        
+        {/* Quiz Routes */}
+        <Route path="/quiz/:id" element={user ? <TakeQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/analytics" element={user?.role === 'admin' ? <AdminAnalytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        <Route path="/admin/users" element={user?.role === 'admin' ? <UserManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        
+        {/* General Routes */}
+        <Route path="/ai-teacher" element={user ? <AITeacher user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
       </Routes>
     </Router>
