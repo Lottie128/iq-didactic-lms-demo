@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, Video, Sparkles, Eye, LogOut, BarChart3 } from 'lucide-react';
+import { Users, BookOpen, Video, Sparkles, Eye, LogOut, BarChart3, Edit } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
 import './Dashboard.css';
 
@@ -24,7 +24,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
             <Sparkles size={16} />
             <span>AI Assistant</span>
           </button>
-          <div className="user-menu glass">
+          <div className="user-menu glass" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
             <div className="user-avatar">{user.name.charAt(0)}</div>
             <span>{user.name}</span>
           </div>
@@ -75,7 +75,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
         <section className="courses-section">
           <div className="section-header">
             <h2>Your Courses</h2>
-            <button className="btn btn-primary">
+            <button className="btn btn-primary" onClick={() => navigate('/create-course')}>
               <BookOpen size={16} />
               Create Course
             </button>
@@ -101,7 +101,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
                     <Eye size={14} />
                     View
                   </button>
-                  <button className="btn btn-secondary">
+                  <button className="btn btn-secondary" onClick={() => navigate(`/edit-course/${course.id}`)}>
+                    <Edit size={14} />
                     Edit
                   </button>
                 </div>

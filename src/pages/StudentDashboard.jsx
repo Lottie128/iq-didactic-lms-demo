@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Clock, Award, TrendingUp, Play, Sparkles, LogOut } from 'lucide-react';
+import { BookOpen, Clock, Award, TrendingUp, Play, Sparkles, LogOut, User } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
 import './Dashboard.css';
 
@@ -24,7 +24,7 @@ const StudentDashboard = ({ user, onLogout }) => {
             <Sparkles size={16} />
             <span>AI Teacher</span>
           </button>
-          <div className="user-menu glass">
+          <div className="user-menu glass" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
             <div className="user-avatar">{user.name.charAt(0)}</div>
             <span>{user.name}</span>
           </div>
