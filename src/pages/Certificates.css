@@ -1,0 +1,203 @@
+.certificates-root {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  position: relative;
+}
+
+.certificates-main {
+  padding: 24px 32px 60px;
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.certificates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+  gap: 48px;
+}
+
+.certificate-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.certificate-card {
+  aspect-ratio: 1.414;
+  padding: 48px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.05), rgba(217, 119, 6, 0.05));
+  border: 2px solid rgba(251, 191, 36, 0.2);
+}
+
+.cert-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: #fbbf24;
+  opacity: 0.3;
+}
+
+.cert-border {
+  position: absolute;
+  inset: 20px;
+  border: 2px solid rgba(251, 191, 36, 0.2);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.cert-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cert-logo {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: #fbbf24;
+  margin-bottom: 20px;
+}
+
+.certificate-card h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.cert-text {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.student-name {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 12px 0;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.course-name {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 12px 0 24px;
+}
+
+.cert-details {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 20px 0;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-label {
+  font-size: 11px;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.detail-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cert-signature {
+  margin-top: 24px;
+}
+
+.signature-line {
+  display: inline-block;
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+  padding-top: 12px;
+  min-width: 200px;
+}
+
+.signature {
+  font-family: 'Brush Script MT', cursive;
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.signature-title {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.cert-footer {
+  margin-top: auto;
+}
+
+.cert-id {
+  font-size: 10px;
+  opacity: 0.5;
+  letter-spacing: 0.1em;
+}
+
+.certificate-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.certificate-actions .btn {
+  flex: 1;
+  min-width: 150px;
+}
+
+@media (max-width: 768px) {
+  .certificates-main {
+    padding: 16px;
+  }
+
+  .certificates-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .certificate-card {
+    padding: 24px;
+  }
+
+  .cert-logo {
+    font-size: 14px;
+  }
+
+  .certificate-card h2 {
+    font-size: 20px;
+  }
+
+  .student-name {
+    font-size: 24px;
+  }
+
+  .course-name {
+    font-size: 16px;
+  }
+
+  .certificate-actions {
+    flex-direction: column;
+  }
+}
