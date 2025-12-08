@@ -1,107 +1,99 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, User, Lock, AtSign } from 'lucide-react';
-import '../App.css';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import ThemeToggler from '../components/ThemeToggler';
 import './Auth.css';
 
 const Login = ({ onLogin }) => {
-  const [role, setRole] = useState('student');
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('student');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Login submitted with role:', role);
-    onLogin({
-      name: role === 'student' ? 'Alex Student' : role === 'teacher' ? 'Jordan Teacher' : 'Admin IQ',
-      role,
-      email,
-    });
+    onLogin({ name: 'Demo User', email, role });
   };
 
   return (
     <div className="auth-root">
-      <div className="auth-orbit" />
-      <header className="auth-header">
-        <div className="auth-logo">
-          <div className="logo-mark glass-strong">IQ</div>
-          <div className="logo-text">
-            <span>IQ Didactic</span>
-            <p>Apple-inspired Learning</p>
-          </div>
-        </div>
-        <nav className="auth-nav">
-          <Link to="/login" className="nav-link active">Sign in</Link>
-          <Link to="/signup" className="nav-link">Create account</Link>
-        </nav>
-      </header>
+      <div className="auth-bg" />
+      
+      <div className="theme-toggle-auth">
+        <ThemeToggler />
+      </div>
 
-      <main className="auth-main fade-in">
-        <section className="auth-hero">
-          <h1>Sign in to your learning space</h1>
-          <p>One clean interface for students, teachers, and admins. No noise, just focus.</p>
-
-          <div className="role-toggle glass">
-            {['student', 'teacher', 'admin'].map((r) => (
-              <button
-                key={r}
-                type="button"
-                className={`role-pill ${role === r ? 'active' : ''}`}
-                onClick={() => setRole(r)}
-              >
-                <User size={16} />
-                <span>{r.charAt(0).toUpperCase() + r.slice(1)}</span>
-              </button>
-            ))}
+      <div className="auth-container fade-in">
+        <div className="auth-card glass-strong" style={{ maxWidth: '500px', margin: '0 auto' }}>
+          <div className="auth-header">
+            <div className="logo-large glass">IQ</div>
+            <h1>Welcome Back</h1>
+            <p>Sign in to continue to IQ Didactic</p>
           </div>
 
-          <div className="hero-footnote">
-            <span className="dot" />
-            <p>AI Teacher is available in every role for this demo.</p>
-          </div>
-        </section>
-
-        <section className="auth-card glass-strong scale-in">
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="field">
-              <label>Email</label>
-              <div className="field-input">
-                <AtSign size={16} />
-                <input
-                  className="input"
-                  type="email"
-                  placeholder="you@iqdidactic.app"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <div className="form-field">
+              <label><Mail size={16} /> Email Address</label>
+              <input
+                className="input"
+                type="email"
+                placeholder="demo@iqdidactic.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
-            <div className="field">
-              <label>Password</label>
-              <div className="field-input">
-                <Lock size={16} />
+            <div className="form-field">
+              <label><Lock size={16} /> Password</label>
+              <div className="password-input">
                 <input
                   className="input"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
-            <button className="btn btn-primary auth-submit" type="submit">
-              Continue as {role}
-              <ArrowRight size={16} />
-            </button>
+            <div className="form-field">
+              <label>Login As</label>
+              <select
+                className="input"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="admin">Administrator</option>
+              </select>
+            </div>
 
-            <p className="hint">No real backend in this demo. Any credentials will sign you in.</p>
+            <button type="submit" className="btn btn-primary btn-full">
+              Sign In
+            </button>
           </form>
-        </section>
-      </main>
+
+          <div className="auth-footer">
+            <p>
+              Don't have an account?
+              <button className="link-btn" onClick={() => navigate('/signup')}>
+                Sign Up
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

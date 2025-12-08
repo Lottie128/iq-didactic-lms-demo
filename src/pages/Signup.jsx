@@ -1,114 +1,249 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, UserPlus, AtSign, Lock } from 'lucide-react';
-import '../App.css';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Lock, User, Phone, Globe, MapPin, Calendar, GraduationCap, Briefcase, Eye, EyeOff } from 'lucide-react';
+import ThemeToggler from '../components/ThemeToggler';
 import './Auth.css';
 
 const Signup = ({ onSignup }) => {
-  const [role, setRole] = useState('student');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    country: '',
+    city: '',
+    birthday: '',
+    occupation: '',
+    educationLevel: '',
+    role: 'student'
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Signup submitted with role:', role);
-    onSignup({ name, role, email });
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match!');
+      return;
+    }
+    onSignup({ name: formData.name, email: formData.email, role: formData.role });
   };
 
   return (
     <div className="auth-root">
-      <div className="auth-orbit" />
-      <header className="auth-header">
-        <div className="auth-logo">
-          <div className="logo-mark glass-strong">IQ</div>
-          <div className="logo-text">
-            <span>IQ Didactic</span>
-            <p>Apple-inspired Learning</p>
+      <div className="auth-bg" />
+      
+      <div className="theme-toggle-auth">
+        <ThemeToggler />
+      </div>
+
+      <div className="auth-container fade-in">
+        <div className="auth-card glass-strong">
+          <div className="auth-header">
+            <div className="logo-large glass">IQ</div>
+            <h1>Create Account</h1>
+            <p>Join IQ Didactic and start learning today</p>
           </div>
-        </div>
-        <nav className="auth-nav">
-          <Link to="/login" className="nav-link">Sign in</Link>
-          <Link to="/signup" className="nav-link active">Create account</Link>
-        </nav>
-      </header>
 
-      <main className="auth-main fade-in">
-        <section className="auth-hero">
-          <h1>Create your IQ Didactic profile</h1>
-          <p>Choose a role now, switch later. This is a front-end only demo.</p>
-
-          <div className="role-toggle glass">
-            {['student', 'teacher', 'admin'].map((r) => (
-              <button
-                key={r}
-                type="button"
-                className={`role-pill ${role === r ? 'active' : ''}`}
-                onClick={() => setRole(r)}
-              >
-                <UserPlus size={16} />
-                <span>{r.charAt(0).toUpperCase() + r.slice(1)}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="auth-card glass-strong scale-in">
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="field">
-              <label>Full name</label>
-              <div className="field-input">
-                <UserPlus size={16} />
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-field">
+                <label><User size={16} /> Full Name *</label>
                 <input
                   className="input"
                   type="text"
-                  placeholder="Alex Student"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
-            </div>
 
-            <div className="field">
-              <label>Email</label>
-              <div className="field-input">
-                <AtSign size={16} />
+              <div className="form-field">
+                <label><Mail size={16} /> Email Address *</label>
                 <input
                   className="input"
                   type="email"
-                  placeholder="you@iqdidactic.app"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="john@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                 />
               </div>
             </div>
 
-            <div className="field">
-              <label>Password</label>
-              <div className="field-input">
-                <Lock size={16} />
+            <div className="form-row">
+              <div className="form-field">
+                <label><Phone size={16} /> Mobile Number *</label>
+                <input
+                  className="input"
+                  type="tel"
+                  placeholder="+260 97 123 4567"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label><Calendar size={16} /> Date of Birth *</label>
+                <input
+                  className="input"
+                  type="date"
+                  value={formData.birthday}
+                  onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label><Globe size={16} /> Country *</label>
+                <select
+                  className="input"
+                  value={formData.country}
+                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  required
+                >
+                  <option value="">Select Country</option>
+                  <option value="Zambia">Zambia</option>
+                  <option value="India">India</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Canada">Canada</option>
+                  <option value="Australia">Australia</option>
+                  <option value="South Africa">South Africa</option>
+                  <option value="Kenya">Kenya</option>
+                  <option value="Nigeria">Nigeria</option>
+                  <option value="Ghana">Ghana</option>
+                  <option value="Tanzania">Tanzania</option>
+                  <option value="Uganda">Uganda</option>
+                  <option value="Zimbabwe">Zimbabwe</option>
+                  <option value="Botswana">Botswana</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label><MapPin size={16} /> City *</label>
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Lusaka"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label><Briefcase size={16} /> Occupation *</label>
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Student, Developer, Teacher, etc."
+                  value={formData.occupation}
+                  onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label><GraduationCap size={16} /> Education Level *</label>
+                <select
+                  className="input"
+                  value={formData.educationLevel}
+                  onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
+                  required
+                >
+                  <option value="">Select Level</option>
+                  <option value="High School">High School</option>
+                  <option value="Undergraduate">Undergraduate</option>
+                  <option value="Graduate">Graduate</option>
+                  <option value="Postgraduate">Postgraduate</option>
+                  <option value="PhD">PhD</option>
+                  <option value="Professional">Professional Certification</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-field">
+              <label><User size={16} /> Register As *</label>
+              <select
+                className="input"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                required
+              >
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+              </select>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label><Lock size={16} /> Password *</label>
+                <div className="password-input">
+                  <input
+                    className="input"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <small>Minimum 8 characters</small>
+              </div>
+
+              <div className="form-field">
+                <label><Lock size={16} /> Confirm Password *</label>
                 <input
                   className="input"
                   type="password"
-                  placeholder="Create a strong password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required
                 />
               </div>
             </div>
 
-            <button className="btn btn-primary auth-submit" type="submit">
-              Create {role} account
-              <ArrowRight size={16} />
-            </button>
+            <div className="terms-check">
+              <input type="checkbox" id="terms" required />
+              <label htmlFor="terms">
+                I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+              </label>
+            </div>
 
-            <p className="hint">Accounts are stored in memory only. Perfect for live demos.</p>
+            <button type="submit" className="btn btn-primary btn-full">
+              Create Account
+            </button>
           </form>
-        </section>
-      </main>
+
+          <div className="auth-footer">
+            <p>
+              Already have an account?
+              <button className="link-btn" onClick={() => navigate('/login')}>
+                Sign In
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
