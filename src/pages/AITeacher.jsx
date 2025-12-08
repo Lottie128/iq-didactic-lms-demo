@@ -9,7 +9,7 @@ const AITeacher = ({ user, onLogout }) => {
     {
       id: 1,
       role: 'ai',
-      text: 'Hello! I'm your AI Teacher assistant. I can help you with lesson planning, quiz generation, course outlines, and answering questions. How can I assist you today?'
+      text: 'Hello! I am your AI Teacher assistant. I can help you with lesson planning, quiz generation, course outlines, and answering questions. How can I assist you today?'
     }
   ]);
   const [input, setInput] = useState('');
@@ -32,7 +32,7 @@ const AITeacher = ({ user, onLogout }) => {
       const aiMessage = {
         id: messages.length + 2,
         role: 'ai',
-        text: `Great question! Since this is a demo, I'm showing a simulated response. In production, I would use advanced AI to help you with "${input}". This could include generating lesson plans, creating quiz questions, suggesting learning paths, or explaining complex topics in simple terms.`
+        text: `Great question! Since this is a demo, I am showing a simulated response. In production, I would use advanced AI to help you with "${input}". This could include generating lesson plans, creating quiz questions, suggesting learning paths, or explaining complex topics in simple terms.`
       };
       setMessages(prev => [...prev, aiMessage]);
     }, 1000);
