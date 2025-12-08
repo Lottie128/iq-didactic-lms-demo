@@ -36,7 +36,9 @@ body[data-theme="light"] .achievements-root,
 body[data-theme="light"] .forum-root,
 body[data-theme="light"] .analytics-root,
 body[data-theme="light"] .user-mgmt-root,
-body[data-theme="light"] .create-quiz-root {
+body[data-theme="light"] .create-quiz-root,
+body[data-theme="light"] .wishlist-root,
+body[data-theme="light"] .schedule-root {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   color: #111827;
 }
@@ -55,6 +57,18 @@ body[data-theme="light"] .glass-strong {
   color: #111827;
 }
 
+body[data-theme="light"] h1,
+body[data-theme="light"] h2,
+body[data-theme="light"] h3,
+body[data-theme="light"] h4,
+body[data-theme="light"] h5,
+body[data-theme="light"] h6,
+body[data-theme="light"] p,
+body[data-theme="light"] span,
+body[data-theme="light"] label {
+  color: #111827;
+}
+
 body[data-theme="light"] .btn {
   color: #111827;
 }
@@ -64,8 +78,19 @@ body[data-theme="light"] .btn-primary {
   color: #fff;
 }
 
+body[data-theme="light"] .btn-secondary {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #111827;
+}
+
+body[data-theme="light"] .btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 body[data-theme="light"] .input,
-body[data-theme="light"] .textarea {
+body[data-theme="light"] .textarea,
+body[data-theme="light"] select {
   background: rgba(0, 0, 0, 0.05);
   border-color: rgba(0, 0, 0, 0.1);
   color: #111827;
@@ -80,4 +105,204 @@ body[data-theme="light"] .theme-toggler {
   border-color: rgba(0, 0, 0, 0.1);
   background: rgba(0, 0, 0, 0.05);
   color: #111827;
+}
+
+body[data-theme="light"] .theme-toggler:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Fix icon colors in light mode */
+body[data-theme="light"] svg,
+body[data-theme="light"] .btn svg,
+body[data-theme="light"] .nav-btn svg,
+body[data-theme="light"] .btn-icon svg,
+body[data-theme="light"] .action-card svg,
+body[data-theme="light"] .stat-card svg {
+  color: #111827;
+  stroke: #111827;
+}
+
+/* Keep primary button icons white */
+body[data-theme="light"] .btn-primary svg {
+  color: #fff;
+  stroke: #fff;
+}
+
+/* Navigation and header icons */
+body[data-theme="light"] .header-nav svg,
+body[data-theme="light"] .dashboard-header svg {
+  color: #111827;
+  stroke: #111827;
+}
+
+/* Course card icons */
+body[data-theme="light"] .course-card svg,
+body[data-theme="light"] .course-meta svg {
+  color: #6b7280;
+  stroke: #6b7280;
+}
+
+/* Stat card icons - keep colorful */
+body[data-theme="light"] .stat-card svg {
+  color: #3b82f6;
+  stroke: #3b82f6;
+}
+
+/* Action card icons */
+body[data-theme="light"] .action-card svg {
+  color: #3b82f6;
+  stroke: #3b82f6;
+}
+
+/* Table and list icons */
+body[data-theme="light"] .btn-icon-small svg,
+body[data-theme="light"] .action-btns svg {
+  color: #6b7280;
+  stroke: #6b7280;
+}
+
+body[data-theme="light"] .btn-icon-small.danger svg {
+  color: #ef4444;
+  stroke: #ef4444;
+}
+
+/* Search and filter icons */
+body[data-theme="light"] .search-box svg,
+body[data-theme="light"] .filter-select svg {
+  color: #6b7280;
+  stroke: #6b7280;
+}
+
+/* Progress and achievement icons */
+body[data-theme="light"] .progress-card svg,
+body[data-theme="light"] .badge-card svg,
+body[data-theme="light"] .certificate-card svg {
+  color: #3b82f6;
+  stroke: #3b82f6;
+}
+
+/* Notification icons */
+body[data-theme="light"] .notification-bell svg,
+body[data-theme="light"] .notif-icon svg {
+  color: #111827;
+  stroke: #111827;
+}
+
+/* Discussion and forum icons */
+body[data-theme="light"] .discussion-card svg,
+body[data-theme="light"] .event-card svg {
+  color: #6b7280;
+  stroke: #6b7280;
+}
+
+/* Lesson sidebar icons */
+body[data-theme="light"] .lesson-item svg,
+body[data-theme="light"] .lessons-sidebar svg {
+  color: #6b7280;
+  stroke: #6b7280;
+}
+
+/* Quiz icons */
+body[data-theme="light"] .quiz-item svg,
+body[data-theme="light"] .quiz-section svg {
+  color: #3b82f6;
+  stroke: #3b82f6;
+}
+
+/* Video player icons */
+body[data-theme="light"] .play-overlay svg {
+  color: #111827;
+  stroke: #111827;
+}
+
+/* User menu and profile icons */
+body[data-theme="light"] .user-menu svg {
+  color: #111827;
+  stroke: #111827;
+}
+
+/* Form icons */
+body[data-theme="light"] .form-field svg,
+body[data-theme="light"] .form-header svg {
+  color: #111827;
+  stroke: #111827;
+}
+
+/* Calendar icons */
+body[data-theme="light"] .calendar-section svg,
+body[data-theme="light"] .calendar-header svg {
+  color: #111827;
+  stroke: #111827;
+}
+
+/* Opacity adjustments for light mode */
+body[data-theme="light"] .course-desc,
+body[data-theme="light"] .stat-label,
+body[data-theme="light"] .lesson-duration {
+  opacity: 0.7;
+  color: #6b7280;
+}
+
+/* Progress bars in light mode */
+body[data-theme="light"] .progress-bar {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Borders and dividers */
+body[data-theme="light"] .course-footer,
+body[data-theme="light"] .discussion-footer,
+body[data-theme="light"] .event-card {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Table in light mode */
+body[data-theme="light"] table th {
+  background: rgba(0, 0, 0, 0.03);
+  color: #6b7280;
+}
+
+body[data-theme="light"] table td {
+  border-color: rgba(0, 0, 0, 0.05);
+  color: #111827;
+}
+
+body[data-theme="light"] tbody tr:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* User email and secondary text */
+body[data-theme="light"] .user-email,
+body[data-theme="light"] .post-time,
+body[data-theme="light"] .event-time {
+  color: #6b7280;
+}
+
+/* Placeholder text */
+body[data-theme="light"] ::placeholder {
+  color: #9ca3af;
+}
+
+/* Modal overlay */
+body[data-theme="light"] .user-form-overlay,
+body[data-theme="light"] .notification-overlay {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Notification panel */
+body[data-theme="light"] .notification-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body[data-theme="light"] .notification-item {
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+body[data-theme="light"] .notification-item:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+body[data-theme="light"] .notification-item.unread {
+  background: rgba(59, 130, 246, 0.05);
 }
