@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Clock, Award, TrendingUp, Play, Sparkles, LogOut, User } from 'lucide-react';
+import { BookOpen, Clock, Award, TrendingUp, Play, Sparkles, LogOut, User, Trophy, FileText, Flame } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
+import NotificationCenter from '../components/NotificationCenter';
 import './Dashboard.css';
 
 const StudentDashboard = ({ user, onLogout }) => {
@@ -24,6 +25,7 @@ const StudentDashboard = ({ user, onLogout }) => {
             <Sparkles size={16} />
             <span>AI Teacher</span>
           </button>
+          <NotificationCenter />
           <div className="user-menu glass" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
             <div className="user-avatar">{user.name.charAt(0)}</div>
             <span>{user.name}</span>
@@ -41,34 +43,52 @@ const StudentDashboard = ({ user, onLogout }) => {
             <p>Continue your learning journey where you left off.</p>
           </div>
           <div className="stats-grid">
-            <div className="stat-card glass">
+            <div className="stat-card glass" onClick={() => navigate('/progress')} style={{ cursor: 'pointer' }}>
               <BookOpen size={20} />
               <div>
                 <p className="stat-value">2</p>
                 <p className="stat-label">Active Courses</p>
               </div>
             </div>
-            <div className="stat-card glass">
-              <Clock size={20} />
-              <div>
-                <p className="stat-value">24h</p>
-                <p className="stat-label">This Week</p>
-              </div>
-            </div>
-            <div className="stat-card glass">
+            <div className="stat-card glass" onClick={() => navigate('/certificates')} style={{ cursor: 'pointer' }}>
               <Award size={20} />
               <div>
-                <p className="stat-value">8</p>
-                <p className="stat-label">Completed</p>
+                <p className="stat-value">3</p>
+                <p className="stat-label">Certificates</p>
               </div>
             </div>
-            <div className="stat-card glass">
-              <TrendingUp size={20} />
+            <div className="stat-card glass" onClick={() => navigate('/achievements')} style={{ cursor: 'pointer' }}>
+              <Trophy size={20} />
               <div>
-                <p className="stat-value">92%</p>
-                <p className="stat-label">Avg Score</p>
+                <p className="stat-value">6/12</p>
+                <p className="stat-label">Badges</p>
               </div>
             </div>
+            <div className="stat-card glass highlight">
+              <Flame size={20} />
+              <div>
+                <p className="stat-value">7 Days</p>
+                <p className="stat-label">Streak 🔥</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="quick-actions glass-strong">
+          <h3>Quick Links</h3>
+          <div className="actions-grid">
+            <button className="action-card glass" onClick={() => navigate('/progress')}>
+              <TrendingUp size={24} />
+              <span>My Progress</span>
+            </button>
+            <button className="action-card glass" onClick={() => navigate('/certificates')}>
+              <Award size={24} />
+              <span>Certificates</span>
+            </button>
+            <button className="action-card glass" onClick={() => navigate('/achievements')}>
+              <Trophy size={24} />
+              <span>Achievements</span>
+            </button>
           </div>
         </section>
 
@@ -106,6 +126,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                 <div className="course-meta">
                   <span><BookOpen size={14} /> {course.videos.length} lessons</span>
                   <span><Clock size={14} /> {course.duration}</span>
+                  <span><FileText size={14} /> 2 quizzes</span>
                 </div>
                 <div className="course-footer">
                   <p className="course-instructor">{course.instructor}</p>

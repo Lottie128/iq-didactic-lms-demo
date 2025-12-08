@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, CheckCircle, Circle, Sparkles, LogOut, FileText, Award } from 'lucide-react';
+import { ArrowLeft, Play, CheckCircle, Circle, Sparkles, LogOut, FileText, Award, MessageCircle, Star } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
+import CourseReviews from './CourseReviews';
+import NotificationCenter from '../components/NotificationCenter';
 import './CourseView.css';
 
 const CourseView = ({ user, onLogout }) => {
@@ -15,6 +17,9 @@ const CourseView = ({ user, onLogout }) => {
     return <div className="dashboard-root"><p>Course not found</p></div>;
   }
 
+  const averageRating = 4.7;
+  const totalReviews = 248;
+
   return (
     <div className="course-view-root">
       <div className="dashboard-bg" />
@@ -26,7 +31,14 @@ const CourseView = ({ user, onLogout }) => {
           </button>
           <div className="header-title">
             <h2>{course.title}</h2>
-            <p>{course.instructor}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '2px' }}>
+                {[1,2,3,4,5].map(star => (
+                  <Star key={star} size={12} fill={star <= Math.round(averageRating) ? '#fbbf24' : 'none'} color="#fbbf24" />
+                ))}
+              </div>
+              <span style={{ fontSize: '11px', opacity: 0.7 }}>{averageRating} ({totalReviews} reviews)</span>
+            </div>
           </div>
         </div>
         <nav className="header-nav">
@@ -34,6 +46,7 @@ const CourseView = ({ user, onLogout }) => {
             <Sparkles size={16} />
             <span>AI Help</span>
           </button>
+          <NotificationCenter />
           <div className="user-menu glass">
             <div className="user-avatar">{user.name.charAt(0)}</div>
             <span>{user.name}</span>
@@ -103,6 +116,21 @@ const CourseView = ({ user, onLogout }) => {
               </div>
             </div>
           </div>
+
+          {/* Discussion Button */}
+          <div className="discussion-cta glass-strong">
+            <MessageCircle size={24} />
+            <div>
+              <h3>Join the Discussion</h3>
+              <p>Ask questions, share insights, and connect with other students</p>
+            </div>
+            <button className="btn btn-primary" onClick={() => navigate(`/course/${course.id}/discussions`)}>
+              View Discussions
+            </button>
+          </div>
+
+          {/* Reviews Section */}
+          <CourseReviews courseId={course.id} />
         </section>
 
         <aside className="lessons-sidebar glass">

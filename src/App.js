@@ -15,6 +15,10 @@ import TakeQuiz from './pages/TakeQuiz';
 import CreateQuiz from './pages/CreateQuiz';
 import AdminAnalytics from './pages/AdminAnalytics';
 import UserManagement from './pages/UserManagement';
+import StudentProgress from './pages/StudentProgress';
+import Certificates from './pages/Certificates';
+import Achievements from './pages/Achievements';
+import DiscussionForum from './pages/DiscussionForum';
 import './App.css';
 
 function App() {
@@ -62,6 +66,14 @@ function App() {
         {/* Quiz Routes */}
         <Route path="/quiz/:id" element={user ? <TakeQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/create-quiz" element={user ? <CreateQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        
+        {/* Student Features */}
+        <Route path="/progress" element={user ? <StudentProgress user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        <Route path="/certificates" element={user ? <Certificates user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        <Route path="/achievements" element={user ? <Achievements user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        
+        {/* Discussion Routes */}
+        <Route path="/course/:id/discussions" element={user ? <DiscussionForum user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         
         {/* Admin Routes */}
         <Route path="/admin/analytics" element={user?.role === 'admin' ? <AdminAnalytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
