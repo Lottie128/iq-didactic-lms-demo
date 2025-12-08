@@ -1,0 +1,172 @@
+.course-view-root {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  position: relative;
+}
+
+.course-view-main {
+  padding: 24px 32px 60px;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+}
+
+.video-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.video-container {
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background:
+    linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(10, 10, 10, 0.9)),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23111" width="100" height="100"/></svg>');
+}
+
+.play-overlay {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #000;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 16px;
+}
+
+.play-overlay:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 40px rgba(255, 255, 255, 0.3);
+}
+
+.video-title {
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.video-info h3 {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+.video-info p {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.lessons-sidebar {
+  border-radius: 20px;
+  padding: 24px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  position: sticky;
+  top: 100px;
+}
+
+.lessons-sidebar h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.lessons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lesson-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.lesson-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lesson-item.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.lesson-icon {
+  opacity: 0.6;
+}
+
+.lesson-item.active .lesson-icon {
+  opacity: 1;
+}
+
+.lesson-info {
+  flex: 1;
+}
+
+.lesson-title {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.lesson-duration {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+@media (max-width: 1024px) {
+  .course-view-main {
+    grid-template-columns: 1fr;
+  }
+
+  .lessons-sidebar {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .course-view-main {
+    padding: 16px;
+  }
+}
