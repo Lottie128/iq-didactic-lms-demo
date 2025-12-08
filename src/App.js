@@ -12,6 +12,7 @@ import CreateCourse from './pages/CreateCourse';
 import EditCourse from './pages/EditCourse';
 import UserProfile from './pages/UserProfile';
 import TakeQuiz from './pages/TakeQuiz';
+import CreateQuiz from './pages/CreateQuiz';
 import AdminAnalytics from './pages/AdminAnalytics';
 import UserManagement from './pages/UserManagement';
 import './App.css';
@@ -60,6 +61,7 @@ function App() {
         
         {/* Quiz Routes */}
         <Route path="/quiz/:id" element={user ? <TakeQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        <Route path="/create-quiz" element={user ? <CreateQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         
         {/* Admin Routes */}
         <Route path="/admin/analytics" element={user?.role === 'admin' ? <AdminAnalytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />

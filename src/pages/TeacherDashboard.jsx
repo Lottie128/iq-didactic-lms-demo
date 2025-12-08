@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, Video, Sparkles, Eye, LogOut, BarChart3, Edit } from 'lucide-react';
+import { Users, BookOpen, Video, Sparkles, Eye, LogOut, BarChart3, Edit, FileText, Award } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
 import './Dashboard.css';
 
@@ -56,10 +56,10 @@ const TeacherDashboard = ({ user, onLogout }) => {
               </div>
             </div>
             <div className="stat-card glass">
-              <Video size={20} />
+              <FileText size={20} />
               <div>
-                <p className="stat-value">10</p>
-                <p className="stat-label">Live Sessions</p>
+                <p className="stat-value">8</p>
+                <p className="stat-label">Quizzes</p>
               </div>
             </div>
             <div className="stat-card glass">
@@ -72,13 +72,27 @@ const TeacherDashboard = ({ user, onLogout }) => {
           </div>
         </section>
 
+        <section className="quick-actions glass-strong">
+          <h3>Quick Actions</h3>
+          <div className="actions-grid">
+            <button className="action-card glass" onClick={() => navigate('/create-course')}>
+              <BookOpen size={24} />
+              <span>Create Course</span>
+            </button>
+            <button className="action-card glass" onClick={() => navigate('/create-quiz')}>
+              <Award size={24} />
+              <span>Create Quiz</span>
+            </button>
+            <button className="action-card glass" onClick={() => navigate('/ai-teacher')}>
+              <Sparkles size={24} />
+              <span>AI Assistant</span>
+            </button>
+          </div>
+        </section>
+
         <section className="courses-section">
           <div className="section-header">
             <h2>Your Courses</h2>
-            <button className="btn btn-primary" onClick={() => navigate('/create-course')}>
-              <BookOpen size={16} />
-              Create Course
-            </button>
           </div>
           <div className="courses-grid">
             {demoCourses.map(course => (
@@ -92,6 +106,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
                 <div className="course-meta">
                   <span><Video size={14} /> {course.videos.length} videos</span>
                   <span><Users size={14} /> {course.students}</span>
+                  <span><FileText size={14} /> 2 quizzes</span>
                 </div>
                 <div className="course-footer">
                   <button 
@@ -114,8 +129,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
         <section className="ai-section glass-strong">
           <div className="ai-content">
             <Sparkles size={32} />
-            <h3>Need help creating lesson plans?</h3>
-            <p>Use our AI Teacher assistant to generate course outlines, quizzes, and learning materials.</p>
+            <h3>Need help creating lesson plans or quizzes?</h3>
+            <p>Use our AI Teacher assistant to generate course outlines, quiz questions, and learning materials.</p>
             <button className="btn btn-primary" onClick={() => navigate('/ai-teacher')}>
               Launch AI Assistant
             </button>
