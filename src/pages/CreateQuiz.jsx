@@ -1,0 +1,230 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Plus, X, Clock, Award, Sparkles, LogOut } from 'lucide-react';
+import './CreateQuiz.css';
+
+const CreateQuiz = ({ user, onLogout }) => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    title: '',
+    duration: 30,
+    passingScore: 70,
+    course: ''
+  });
+  const [questions, setQuestions] = useState([
+    { id: 1, question: '', options: ['', '', '', ''], correct: 0 }
+  ]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Quiz created:', { ...formData, questions });
+    alert('Quiz created successfully! (Demo only)');
+    navigate(-1);
+  };
+
+  const addQuestion = () => {
+    setQuestions([...questions, { 
+      id: questions.length + 1, 
+      question: '', 
+      options: ['', '', '', ''], 
+      correct: 0 
+    }]);
+  };
+
+  const removeQuestion = (id) => {
+    setQuestions(questions.filter(q => q.id !== id));
+  };
+
+  const updateQuestion = (id, field, value) => {
+    setQuestions(questions.map(q => 
+      q.id === id ? { ...q, [field]: value } : q
+    ));
+  };
+
+  const updateOption = (questionId, optionIndex, value) => {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId) {
+        const newOptions = [...q.options];
+        newOptions[optionIndex] = value;
+        return { ...q, options: newOptions };
+      }
+      return q;
+    }));
+  };
+
+  return (
+    <div className="create-quiz-root">
+      <div className="dashboard-bg" />
+
+      <header className="dashboard-header glass">
+        <div className="header-left">
+          <button className="btn-icon" onClick={() => navigate(-1)}>
+            <ArrowLeft size={20} />
+          </button>
+          <div className="header-title">
+            <h2>Create Quiz</h2>
+            <p>Build assessments with AI proctoring</p>
+          </div>
+        </div>
+        <nav className="header-nav">
+          <button className="nav-btn" onClick={() => navigate('/ai-teacher')}>
+            <Sparkles size={16} />
+            <span>AI Help</span>
+          </button>
+          <div className="user-menu glass">
+            <div className="user-avatar">{user.name.charAt(0)}</div>
+            <span>{user.name}</span>
+          </div>
+          <button className="btn btn-secondary" onClick={onLogout}>
+            <LogOut size={16} />
+          </button>
+        </nav>
+      </header>
+
+      <main className="create-quiz-main fade-in">
+        <form onSubmit={handleSubmit} className="quiz-form">
+          <section className="form-section glass-strong">
+            <h3>Quiz Settings</h3>
+            <div className="form-grid">
+              <div className="form-field full-width">
+                <label>Quiz Title *</label>
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="e.g., Machine Learning Fundamentals - Quiz 1"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label>
+                  <Clock size={16} />
+                  Duration (minutes) *
+                </label>
+                <input
+                  className="input"
+                  type="number"
+                  min="5"
+                  max="180"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label>
+                  <Award size={16} />
+                  Passing Score (%)
+                </label>
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.passingScore}
+                  onChange={(e) => setFormData({ ...formData, passingScore: parseInt(e.target.value) })}
+                />
+              </div>
+
+              <div className="form-field full-width">
+                <label>Assign to Course</label>
+                <select 
+                  className="input"
+                  value={formData.course}
+                  onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                >
+                  <option value="">Select a course...</option>
+                  <option value="1">Machine Learning</option>
+                  <option value="2">React Development</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="ai-proctoring-info glass">
+              <Sparkles size={20} />
+              <div>
+                <p className="info-title">AI Proctoring Enabled</p>
+                <p className="info-desc">Automatic tab switching detection, time tracking, and behavior monitoring</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="form-section glass-strong">
+            <div className="section-header">
+              <h3>Questions ({questions.length})</h3>
+              <button type="button" className="btn btn-secondary" onClick={addQuestion}>
+                <Plus size={16} />
+                Add Question
+              </button>
+            </div>
+
+            <div className="questions-list">
+              {questions.map((question, qIdx) => (
+                <div key={question.id} className="question-card glass">
+                  <div className="question-header">
+                    <span className="question-number">Question {qIdx + 1}</span>
+                    {questions.length > 1 && (
+                      <button type="button" className="btn-icon-small" onClick={() => removeQuestion(question.id)}>
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="form-field full-width">
+                    <label>Question Text *</label>
+                    <textarea
+                      className="input textarea"
+                      placeholder="Enter your question here..."
+                      value={question.question}
+                      onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
+                      rows={3}
+                      required
+                    />
+                  </div>
+
+                  <div className="options-section">
+                    <label>Answer Options *</label>
+                    {question.options.map((option, oIdx) => (
+                      <div key={oIdx} className="option-field">
+                        <input
+                          type="radio"
+                          name={`correct-${question.id}`}
+                          checked={question.correct === oIdx}
+                          onChange={() => updateQuestion(question.id, 'correct', oIdx)}
+                        />
+                        <input
+                          className="input"
+                          type="text"
+                          placeholder={`Option ${oIdx + 1}`}
+                          value={option}
+                          onChange={(e) => updateOption(question.id, oIdx, e.target.value)}
+                          required
+                        />
+                        <span className="correct-label">{question.correct === oIdx && '✓ Correct'}</span>
+                      </div>
+                    ))}
+                    <p className="hint">Select the radio button to mark the correct answer</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="form-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Create Quiz
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+  );
+};
+
+export default CreateQuiz;

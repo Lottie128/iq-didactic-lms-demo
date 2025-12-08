@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, CheckCircle, Circle, Sparkles, LogOut } from 'lucide-react';
+import { ArrowLeft, Play, CheckCircle, Circle, Sparkles, LogOut, FileText, Award } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
 import './CourseView.css';
 
@@ -68,6 +68,39 @@ const CourseView = ({ user, onLogout }) => {
             <div className="video-info">
               <h3>{currentVideo.title}</h3>
               <p>{currentVideo.duration} • Lesson {currentVideo.id} of {course.videos.length}</p>
+            </div>
+          </div>
+
+          {/* Quiz Section */}
+          <div className="quiz-section glass-strong">
+            <div className="quiz-header">
+              <FileText size={24} />
+              <div>
+                <h3>Course Quizzes</h3>
+                <p>Test your knowledge and earn certificates</p>
+              </div>
+            </div>
+            <div className="quiz-list">
+              <div className="quiz-item glass">
+                <div className="quiz-info">
+                  <h4>Quiz 1: Fundamentals</h4>
+                  <p>5 questions • 30 minutes • Passing: 70%</p>
+                </div>
+                <button className="btn btn-primary" onClick={() => navigate(`/quiz/${course.id}`)}>
+                  <Award size={16} />
+                  Take Quiz
+                </button>
+              </div>
+              <div className="quiz-item glass">
+                <div className="quiz-info">
+                  <h4>Final Assessment</h4>
+                  <p>10 questions • 60 minutes • Passing: 80%</p>
+                </div>
+                <button className="btn btn-secondary">
+                  <Award size={16} />
+                  Locked
+                </button>
+              </div>
             </div>
           </div>
         </section>
