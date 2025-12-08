@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Clock, Award, TrendingUp, Play, Sparkles, LogOut, User, Trophy, FileText, Flame } from 'lucide-react';
+import { BookOpen, Clock, Award, TrendingUp, Play, Sparkles, LogOut, Trophy, FileText, Flame, Bookmark, Calendar } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
 import NotificationCenter from '../components/NotificationCenter';
+import ThemeToggler from '../components/ThemeToggler';
 import './Dashboard.css';
 
 const StudentDashboard = ({ user, onLogout }) => {
@@ -25,6 +26,7 @@ const StudentDashboard = ({ user, onLogout }) => {
             <Sparkles size={16} />
             <span>AI Teacher</span>
           </button>
+          <ThemeToggler />
           <NotificationCenter />
           <div className="user-menu glass" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
             <div className="user-avatar">{user.name.charAt(0)}</div>
@@ -88,6 +90,18 @@ const StudentDashboard = ({ user, onLogout }) => {
             <button className="action-card glass" onClick={() => navigate('/achievements')}>
               <Trophy size={24} />
               <span>Achievements</span>
+            </button>
+            <button className="action-card glass" onClick={() => navigate('/wishlist')}>
+              <Bookmark size={24} />
+              <span>Wishlist</span>
+            </button>
+            <button className="action-card glass" onClick={() => navigate('/schedule')}>
+              <Calendar size={24} />
+              <span>Schedule</span>
+            </button>
+            <button className="action-card glass" onClick={() => navigate('/ai-teacher')}>
+              <Sparkles size={24} />
+              <span>AI Teacher</span>
             </button>
           </div>
         </section>

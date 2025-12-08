@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, BookOpen, Video, Sparkles, Eye, LogOut, BarChart3, Edit, FileText, Award } from 'lucide-react';
 import { demoCourses } from '../data/demoCourses';
+import NotificationCenter from '../components/NotificationCenter';
+import ThemeToggler from '../components/ThemeToggler';
 import './Dashboard.css';
 
 const TeacherDashboard = ({ user, onLogout }) => {
@@ -24,6 +26,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
             <Sparkles size={16} />
             <span>AI Assistant</span>
           </button>
+          <ThemeToggler />
+          <NotificationCenter />
           <div className="user-menu glass" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
             <div className="user-avatar">{user.name.charAt(0)}</div>
             <span>{user.name}</span>

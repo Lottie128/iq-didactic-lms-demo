@@ -19,6 +19,8 @@ import StudentProgress from './pages/StudentProgress';
 import Certificates from './pages/Certificates';
 import Achievements from './pages/Achievements';
 import DiscussionForum from './pages/DiscussionForum';
+import Wishlist from './pages/Wishlist';
+import Schedule from './pages/Schedule';
 import './App.css';
 
 function App() {
@@ -26,7 +28,6 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Simulate initial loading
     const timer = setTimeout(() => {
       setLoading(false);
     }, 3000);
@@ -71,6 +72,8 @@ function App() {
         <Route path="/progress" element={user ? <StudentProgress user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/certificates" element={user ? <Certificates user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/achievements" element={user ? <Achievements user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        <Route path="/wishlist" element={user ? <Wishlist user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        <Route path="/schedule" element={user ? <Schedule user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         
         {/* Discussion Routes */}
         <Route path="/course/:id/discussions" element={user ? <DiscussionForum user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
