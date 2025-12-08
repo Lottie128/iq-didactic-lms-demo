@@ -1,0 +1,295 @@
+.analytics-root {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  position: relative;
+}
+
+.analytics-main {
+  padding: 24px 32px 60px;
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.global-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.global-stats .stat-card {
+  padding: 24px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.stat-trend {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stat-trend.positive {
+  color: #4ade80;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.analytics-card {
+  padding: 28px;
+  border-radius: 20px;
+}
+
+.analytics-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.card-header h3 {
+  font-size: 18px;
+}
+
+.country-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.country-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.country-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flag {
+  font-size: 28px;
+}
+
+.country-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.country-users {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.growth {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.growth.positive {
+  color: #4ade80;
+}
+
+.gender-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.chart-bar {
+  display: flex;
+  height: 40px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.5s ease;
+}
+
+.bar-segment.male {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.bar-segment.female {
+  background: linear-gradient(135deg, #ec4899, #db2777);
+}
+
+.bar-segment.other {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.gender-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gender-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.gender-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.gender-dot.male {
+  background: #3b82f6;
+}
+
+.gender-dot.female {
+  background: #ec4899;
+}
+
+.gender-dot.other {
+  background: #8b5cf6;
+}
+
+.gender-label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.gender-count {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.gender-benefit {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.ai-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.insight-card {
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.insight-metric {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #fff, rgba(255, 255, 255, 0.6));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.insight-card h4 {
+  font-size: 15px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.insight-card p {
+  font-size: 12px;
+  opacity: 0.7;
+  line-height: 1.5;
+}
+
+.course-gender-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.course-gender-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.course-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.gender-bar {
+  display: flex;
+  height: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.5s ease;
+}
+
+.bar-fill.male {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  justify-content: flex-start;
+}
+
+.bar-fill.female {
+  background: linear-gradient(135deg, #ec4899, #db2777);
+  justify-content: flex-end;
+}
+
+@media (max-width: 1200px) {
+  .global-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-main {
+    padding: 16px;
+  }
+
+  .global-stats {
+    grid-template-columns: 1fr;
+  }
+}
