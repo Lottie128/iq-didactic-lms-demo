@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Clock, Award, Sparkles, LogOut } from 'lucide-react';
+import { ArrowLeft, Plus, X, Clock, Award, Sparkles, LogOut, Image, Upload } from 'lucide-react';
 import './CreateQuiz.css';
 
 const CreateQuiz = ({ user, onLogout }) => {
@@ -12,8 +12,17 @@ const CreateQuiz = ({ user, onLogout }) => {
     course: ''
   });
   const [questions, setQuestions] = useState([
-    { id: 1, question: '', options: ['', '', '', ''], correct: 0 }
+    { id: 1, type: 'multiple-choice', question: '', options: ['', '', '', ''], correct: 0, pairs: [], answer: '', imageUrl: '' }
   ]);
+
+  const questionTypes = [
+    { value: 'multiple-choice', label: 'Multiple Choice', icon: '📝' },
+    { value: 'true-false', label: 'True/False', icon: '✓✗' },
+    { value: 'short-answer', label: 'Short Answer', icon: '✍️' },
+    { value: 'fill-blank', label: 'Fill in the Blank', icon: '___' },
+    { value: 'matching', label: 'Matching Pairs', icon: '↔️' },
+    { value: 'image-based', label: 'Image-based Question', icon: '🖼️' }
+  ];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -25,9 +34,13 @@ const CreateQuiz = ({ user, onLogout }) => {
   const addQuestion = () => {
     setQuestions([...questions, { 
       id: questions.length + 1, 
+      type: 'multiple-choice',
       question: '', 
       options: ['', '', '', ''], 
-      correct: 0 
+      correct: 0,
+      pairs: [{ left: '', right: '' }, { left: '', right: '' }],
+      answer: '',
+      imageUrl: ''
     }]);
   };
 
@@ -50,6 +63,219 @@ const CreateQuiz = ({ user, onLogout }) => {
       }
       return q;
     }));
+  };
+
+  const addMatchingPair = (questionId) => {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId) {
+        return { ...q, pairs: [...q.pairs, { left: '', right: '' }] };
+      }
+      return q;
+    }));
+  };
+
+  const updateMatchingPair = (questionId, pairIndex, side, value) => {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId) {
+        const newPairs = [...q.pairs];
+        newPairs[pairIndex][side] = value;
+        return { ...q, pairs: newPairs };
+      }
+      return q;
+    }));
+  };
+
+  const removeMatchingPair = (questionId, pairIndex) => {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId && q.pairs.length > 2) {
+        return { ...q, pairs: q.pairs.filter((_, idx) => idx !== pairIndex) };
+      }
+      return q;
+    }));
+  };
+
+  const renderQuestionInputs = (question, qIdx) => {
+    switch (question.type) {
+      case 'multiple-choice':
+        return (
+          <div className="options-section">
+            <label>Answer Options *</label>
+            {question.options.map((option, oIdx) => (
+              <div key={oIdx} className="option-field">
+                <input
+                  type="radio"
+                  name={`correct-${question.id}`}
+                  checked={question.correct === oIdx}
+                  onChange={() => updateQuestion(question.id, 'correct', oIdx)}
+                />
+                <input
+                  className="input"
+                  type="text"
+                  placeholder={`Option ${oIdx + 1}`}
+                  value={option}
+                  onChange={(e) => updateOption(question.id, oIdx, e.target.value)}
+                  required
+                />
+                <span className="correct-label">{question.correct === oIdx && '✓ Correct'}</span>
+              </div>
+            ))}
+            <p className="hint">Select the radio button to mark the correct answer</p>
+          </div>
+        );
+
+      case 'true-false':
+        return (
+          <div className="true-false-section">
+            <label>Correct Answer *</label>
+            <div className="tf-buttons">
+              <button
+                type="button"
+                className={`tf-btn ${question.answer === 'true' ? 'active true' : ''}`}
+                onClick={() => updateQuestion(question.id, 'answer', 'true')}
+              >
+                ✓ True
+              </button>
+              <button
+                type="button"
+                className={`tf-btn ${question.answer === 'false' ? 'active false' : ''}`}
+                onClick={() => updateQuestion(question.id, 'answer', 'false')}
+              >
+                ✗ False
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'short-answer':
+        return (
+          <div className="form-field full-width">
+            <label>Expected Answer (Optional - for reference)</label>
+            <input
+              className="input"
+              type="text"
+              placeholder="Enter the expected answer or keywords..."
+              value={question.answer}
+              onChange={(e) => updateQuestion(question.id, 'answer', e.target.value)}
+            />
+            <p className="hint">This will be manually graded. You can provide expected answer for reference.</p>
+          </div>
+        );
+
+      case 'fill-blank':
+        return (
+          <div className="form-field full-width">
+            <label>Correct Answer *</label>
+            <input
+              className="input"
+              type="text"
+              placeholder="Enter the word/phrase that fills the blank"
+              value={question.answer}
+              onChange={(e) => updateQuestion(question.id, 'answer', e.target.value)}
+              required
+            />
+            <p className="hint">Use _____ in your question to indicate where the blank should be.</p>
+          </div>
+        );
+
+      case 'matching':
+        return (
+          <div className="matching-section">
+            <label>Matching Pairs *</label>
+            {question.pairs.map((pair, pIdx) => (
+              <div key={pIdx} className="matching-pair">
+                <input
+                  className="input"
+                  type="text"
+                  placeholder={`Left item ${pIdx + 1}`}
+                  value={pair.left}
+                  onChange={(e) => updateMatchingPair(question.id, pIdx, 'left', e.target.value)}
+                  required
+                />
+                <span className="match-arrow">↔</span>
+                <input
+                  className="input"
+                  type="text"
+                  placeholder={`Right match ${pIdx + 1}`}
+                  value={pair.right}
+                  onChange={(e) => updateMatchingPair(question.id, pIdx, 'right', e.target.value)}
+                  required
+                />
+                {question.pairs.length > 2 && (
+                  <button 
+                    type="button" 
+                    className="btn-icon-small"
+                    onClick={() => removeMatchingPair(question.id, pIdx)}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button 
+              type="button" 
+              className="btn btn-secondary small"
+              onClick={() => addMatchingPair(question.id)}
+            >
+              <Plus size={14} />
+              Add Pair
+            </button>
+            <p className="hint">Students will match items from left column to right column</p>
+          </div>
+        );
+
+      case 'image-based':
+        return (
+          <div className="image-section">
+            <div className="form-field full-width">
+              <label>Image URL *</label>
+              <div className="image-upload">
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Paste image URL or upload..."
+                  value={question.imageUrl}
+                  onChange={(e) => updateQuestion(question.id, 'imageUrl', e.target.value)}
+                  required
+                />
+                <button type="button" className="btn btn-secondary">
+                  <Upload size={16} />
+                  Upload
+                </button>
+              </div>
+              {question.imageUrl && (
+                <div className="image-preview">
+                  <img src={question.imageUrl} alt="Question" onError={(e) => e.target.style.display = 'none'} />
+                </div>
+              )}
+            </div>
+            <div className="options-section">
+              <label>Answer Options *</label>
+              {question.options.map((option, oIdx) => (
+                <div key={oIdx} className="option-field">
+                  <input
+                    type="radio"
+                    name={`correct-${question.id}`}
+                    checked={question.correct === oIdx}
+                    onChange={() => updateQuestion(question.id, 'correct', oIdx)}
+                  />
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder={`Option ${oIdx + 1}`}
+                    value={option}
+                    onChange={(e) => updateOption(question.id, oIdx, e.target.value)}
+                    required
+                  />
+                  <span className="correct-label">{question.correct === oIdx && '✓ Correct'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -166,11 +392,24 @@ const CreateQuiz = ({ user, onLogout }) => {
                 <div key={question.id} className="question-card glass">
                   <div className="question-header">
                     <span className="question-number">Question {qIdx + 1}</span>
-                    {questions.length > 1 && (
-                      <button type="button" className="btn-icon-small" onClick={() => removeQuestion(question.id)}>
-                        <X size={16} />
-                      </button>
-                    )}
+                    <div className="question-actions">
+                      <select
+                        className="type-select"
+                        value={question.type}
+                        onChange={(e) => updateQuestion(question.id, 'type', e.target.value)}
+                      >
+                        {questionTypes.map(type => (
+                          <option key={type.value} value={type.value}>
+                            {type.icon} {type.label}
+                          </option>
+                        ))}
+                      </select>
+                      {questions.length > 1 && (
+                        <button type="button" className="btn-icon-small" onClick={() => removeQuestion(question.id)}>
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-field full-width">
@@ -185,29 +424,7 @@ const CreateQuiz = ({ user, onLogout }) => {
                     />
                   </div>
 
-                  <div className="options-section">
-                    <label>Answer Options *</label>
-                    {question.options.map((option, oIdx) => (
-                      <div key={oIdx} className="option-field">
-                        <input
-                          type="radio"
-                          name={`correct-${question.id}`}
-                          checked={question.correct === oIdx}
-                          onChange={() => updateQuestion(question.id, 'correct', oIdx)}
-                        />
-                        <input
-                          className="input"
-                          type="text"
-                          placeholder={`Option ${oIdx + 1}`}
-                          value={option}
-                          onChange={(e) => updateOption(question.id, oIdx, e.target.value)}
-                          required
-                        />
-                        <span className="correct-label">{question.correct === oIdx && '✓ Correct'}</span>
-                      </div>
-                    ))}
-                    <p className="hint">Select the radio button to mark the correct answer</p>
-                  </div>
+                  {renderQuestionInputs(question, qIdx)}
                 </div>
               ))}
             </div>
