@@ -1,0 +1,83 @@
+.theme-toggler {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.theme-toggler:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(20deg);
+}
+
+/* Light theme styles */
+body[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+}
+
+body[data-theme="light"] .dashboard-root,
+body[data-theme="light"] .course-view-root,
+body[data-theme="light"] .quiz-root,
+body[data-theme="light"] .progress-root,
+body[data-theme="light"] .certificates-root,
+body[data-theme="light"] .achievements-root,
+body[data-theme="light"] .forum-root,
+body[data-theme="light"] .analytics-root,
+body[data-theme="light"] .user-mgmt-root,
+body[data-theme="light"] .create-quiz-root {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  color: #111827;
+}
+
+body[data-theme="light"] .dashboard-bg {
+  background: 
+    radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.1), transparent 40%),
+    radial-gradient(circle at 90% 100%, rgba(147, 51, 234, 0.08), transparent 40%);
+}
+
+body[data-theme="light"] .glass,
+body[data-theme="light"] .glass-strong {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #111827;
+}
+
+body[data-theme="light"] .btn {
+  color: #111827;
+}
+
+body[data-theme="light"] .btn-primary {
+  background: #3b82f6;
+  color: #fff;
+}
+
+body[data-theme="light"] .input,
+body[data-theme="light"] .textarea {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #111827;
+}
+
+body[data-theme="light"] .user-avatar {
+  background: #3b82f6;
+  color: #fff;
+}
+
+body[data-theme="light"] .theme-toggler {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.05);
+  color: #111827;
+}
