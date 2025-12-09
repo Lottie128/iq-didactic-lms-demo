@@ -22,29 +22,60 @@ import Achievements from './pages/Achievements';
 import DiscussionForum from './pages/DiscussionForum';
 import Wishlist from './pages/Wishlist';
 import Schedule from './pages/Schedule';
+import { authAPI } from './services/api';
 import './App.css';
 
 function App() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
+    // Check for existing session
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+      
+      if (token && savedUser) {
+        try {
+          // Verify token is still valid
+          const response = await authAPI.getMe();
+          setUser(response.data);
+        } catch (error) {
+          console.error('Session expired:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+      
+      setInitializing(false);
+    };
+
+    initializeAuth();
+
+    // Show loader for 3 seconds
     const timer = setTimeout(() => {
       setLoading(false);
     }, 3000);
+
     return () => clearTimeout(timer);
   }, []);
 
-  const handleLogin = (userData) => {
+  const handleLogin = async (userData) => {
     console.log('Login data:', userData);
     setUser(userData);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     setUser(null);
   };
 
-  if (loading) {
+  if (loading || initializing) {
     return <Loader />;
   }
 
