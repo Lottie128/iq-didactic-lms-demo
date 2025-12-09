@@ -1,316 +1,324 @@
-# IQ Didactic LMS - Apple-Style Demo
+# IQ Didactic LMS - Full-Stack Demo
 
-![IQ Didactic](https://img.shields.io/badge/IQ-Didactic-black?style=for-the-badge)
-![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+## 🎓 Complete Learning Management System
 
-A stunning Apple-inspired Learning Management System demo built with React. Features glassmorphism design, role-based dashboards, AI teacher interface, and beautiful video players.
+A modern, full-stack LMS built with React frontend and Node.js/Express/PostgreSQL backend.
 
 ## ✨ Features
 
-### 🎨 Design
-- **Apple-style glassmorphism** with black/white color scheme
-- **Smooth animations** and transitions throughout
-- **Kick-ass loader** with orbital animations
-- **Responsive design** for all screen sizes
-- **Inter font** for that clean Apple aesthetic
+### Frontend (React)
+- ✅ Beautiful landing page with dark/light mode
+- ✅ Extended signup (12 fields: name, email, phone, birthday, country, etc.)
+- ✅ JWT authentication with session persistence
+- ✅ Student dashboard with real-time data
+- ✅ Teacher dashboard with course management
+- ✅ Admin panel with analytics
+- ✅ Course viewing and enrollment
+- ✅ Progress tracking with heatmap
+- ✅ Quiz system with AI monitoring
+- ✅ Discussion forums
+- ✅ Course reviews and ratings
+- ✅ Achievements and badges
+- ✅ Certificate generation
+- ✅ User profile management
+- ✅ AI Teacher chatbot
+- ✅ Notifications center
 
-### 👥 User Roles
-- **Student Dashboard** - Course progress, video players, AI help
-- **Teacher Dashboard** - Course management, student stats, AI assistant
-- **Admin Dashboard** - Platform analytics, user management, system settings
-
-### 🎓 Learning Features
-- **2 Demo Courses** with real YouTube video integration
-- **Beautiful Video Player** with glass design
-- **Lesson Progress Tracking** with visual indicators
-- **AI Teacher Interface** with chat-style interaction
-
-### 🤖 AI Teacher
-- Clean chat interface with glass bubbles
-- Pulsing AI avatar animation
-- Quick suggestion chips
-- Demo responses (no backend required)
+### Backend (Node.js/Express/PostgreSQL)
+- ✅ 60+ REST API endpoints
+- ✅ JWT authentication
+- ✅ User management (students, teachers, admins)
+- ✅ Course CRUD with enrollments
+- ✅ Progress tracking
+- ✅ Quiz system with auto-grading
+- ✅ Review and rating system
+- ✅ Discussion forums with voting
+- ✅ Achievement system
+- ✅ Certificate generation
+- ✅ Notification system
+- ✅ Admin analytics
+- ✅ Birthday notifications (cron job)
+- ✅ PostgreSQL database
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v14 or higher)
+- Node.js >= 18
+- PostgreSQL >= 13
 - npm or yarn
 
-### Installation
+### 1. Clone Repository
+```bash
+git clone https://github.com/Lottie128/iq-didactic-lms-demo.git
+cd iq-didactic-lms-demo
+```
+
+### 2. Setup Frontend
 
 ```bash
-# Clone the repository
-git clone https://github.com/Lottie128/iq-didactic-lms-demo.git
+# Install dependencies
+npm install
 
-# Navigate to project directory
-cd iq-didactic-lms-demo
+# Create environment file
+cp .env.example .env
+
+# Edit .env
+REACT_APP_API_URL=http://localhost:5000/api
+
+# Start frontend
+npm start
+```
+
+Frontend runs on http://localhost:3000
+
+### 3. Setup Backend
+
+```bash
+# Navigate to backend
+cd backend
 
 # Install dependencies
 npm install
 
-# Start development server
-npm start
+# Create environment file
+cp .env.example .env
 ```
 
-The app will open at `http://localhost:3000`
+Edit `backend/.env`:
+```env
+NODE_ENV=development
+PORT=5000
 
-## 🎬 Usage
+# PostgreSQL Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=iq_didactic
+DB_USER=postgres
+DB_PASSWORD=your_password
 
-### Login
-1. Open the app and you'll see the loader animation
-2. Choose a role: **Student**, **Teacher**, or **Admin**
-3. Enter any email/password (no backend, all credentials work)
-4. You'll be redirected to your role-specific dashboard
+# JWT Secret (change this!)
+JWT_SECRET=your-super-secret-key-here
+JWT_EXPIRE=7d
 
-### Demo Accounts
-- **Student**: See course progress, watch videos, access AI teacher
-- **Teacher**: Manage courses, view analytics, use AI for lesson planning
-- **Admin**: Platform overview, user management, system settings
-
-### Navigate the App
-- **Dashboard**: Overview and quick stats
-- **Courses**: Browse and start courses
-- **Course View**: Watch videos with beautiful player
-- **AI Teacher**: Chat with AI assistant (simulated responses)
-
-## 🎨 Customization
-
-### Change Course Data
-
-Edit `src/data/demoCourses.js` to customize courses:
-
-```javascript
-{
-  id: 1,
-  title: 'Your Course Title',
-  level: 'Beginner/Intermediate/Advanced',
-  duration: '4 weeks',
-  progress: 0,
-  category: 'Your Category',
-  instructor: 'Instructor Name',
-  description: 'Course description',
-  students: 1000,
-  videos: [
-    {
-      id: 1,
-      title: 'Lesson Title',
-      duration: '10:30',
-      youtubeUrl: 'https://www.youtube.com/embed/YOUR_VIDEO_ID',
-      completed: false
-    }
-  ]
-}
+# Frontend URL
+FRONTEND_URL=http://localhost:3000
 ```
 
-### Update YouTube Links
+### 4. Setup Database
 
-Replace the `youtubeUrl` in each video object with your YouTube embed URLs:
-
-```javascript
-youtubeUrl: 'https://www.youtube.com/embed/YOUR_VIDEO_ID'
+**Option A: Local PostgreSQL**
+```bash
+psql -U postgres
+CREATE DATABASE iq_didactic;
+\q
 ```
 
-### Modify Colors
+**Option B: Cloud Database (Recommended)**
+- **ElephantSQL** (Free): https://www.elephantsql.com
+- **Supabase**: https://supabase.com
+- **Railway**: https://railway.app
 
-Edit `src/App.css` and component CSS files to change the color scheme:
+Copy your database connection details to `backend/.env`
 
-```css
-/* For primary buttons */
-.btn-primary {
-  background: #fff;  /* Change to your color */
-  color: #000;
-}
+### 5. Start Backend
 
-/* For glass effects */
-.glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-}
+```bash
+cd backend
+npm run dev  # Development mode with auto-reload
 ```
 
-### Customize Loader
+Backend runs on http://localhost:5000
 
-Edit `src/components/Loader.jsx` and `Loader.css` to modify the loading animation:
+Database tables are auto-created on first run!
 
-```javascript
-// Change brand name
-<span className="brand">IQ</span>
-<span className="brand-sub">Didactic</span>
-```
+### 6. Test the Application
+
+1. Open http://localhost:3000
+2. Click "Get Started" or "Sign Up"
+3. Register a new account with all fields
+4. Login and explore!
+
+## 📚 API Documentation
+
+See `backend/README.md` for complete API documentation.
+
+### Available Endpoints:
+- Authentication (5 endpoints)
+- Users (6 endpoints)
+- Courses (9 endpoints)
+- Progress (4 endpoints)
+- Quizzes (7 endpoints)
+- Reviews (5 endpoints)
+- Discussions (10 endpoints)
+- Achievements (3 endpoints)
+- Certificates (3 endpoints)
+- Notifications (4 endpoints)
+- Admin (4 endpoints)
+
+**Total: 60+ API endpoints**
+
+## 🎯 Technology Stack
+
+### Frontend
+- React 18
+- React Router
+- Lucide Icons
+- CSS3 with glassmorphism
+- LocalStorage for JWT
+
+### Backend
+- Node.js
+- Express.js
+- PostgreSQL
+- Sequelize ORM
+- JWT authentication
+- bcrypt for passwords
+- node-cron for scheduled tasks
 
 ## 📁 Project Structure
 
 ```
 iq-didactic-lms-demo/
-├── public/
-│   └── index.html
-├── src/
-│   ├── components/
-│   │   ├── Loader.jsx          # Loading screen
-│   │   └── Loader.css
-│   ├── data/
-│   │   └── demoCourses.js      # Course data
-│   ├── pages/
-│   │   ├── Login.jsx           # Login page
-│   │   ├── Signup.jsx          # Signup page
-│   │   ├── StudentDashboard.jsx
-│   │   ├── TeacherDashboard.jsx
-│   │   ├── AdminDashboard.jsx
-│   │   ├── CourseView.jsx      # Video player page
-│   │   ├── AITeacher.jsx       # AI chat interface
-│   │   ├── Auth.css
-│   │   ├── Dashboard.css
-│   │   ├── CourseView.css
-│   │   └── AITeacher.css
-│   ├── App.js                  # Main app with routing
-│   ├── App.css                 # Global styles
-│   ├── index.js
-│   └── index.css
-├── package.json
-└── README.md
+├── src/                    # Frontend React app
+│   ├── components/        # Reusable components
+│   ├── pages/             # Page components
+│   ├── services/          # API service layer
+│   │   └── api.js         # All API calls
+│   └── App.js             # Main app component
+├── backend/               # Backend Node.js API
+│   ├── config/            # Database config
+│   ├── controllers/       # Route handlers
+│   ├── middleware/        # Auth, validation
+│   ├── models/            # Database models
+│   ├── routes/            # API routes
+│   ├── utils/             # Helpers
+│   └── server.js          # Express server
+├── public/                # Static files
+└── package.json           # Dependencies
 ```
 
-## 🎯 Key Components
+## 🔐 Environment Variables
 
-### Loader
-- 3-second animated loader on app start
-- Orbital planet animation
-- Glass card with progress bar
-- IQ Didactic branding
+### Frontend (`.env`)
+```env
+REACT_APP_API_URL=http://localhost:5000/api
+```
 
-### Authentication
-- Clean login/signup forms
-- Role selector (Student/Teacher/Admin)
-- Glassmorphism cards
-- No real backend - demo only
+### Backend (`backend/.env`)
+```env
+NODE_ENV=development
+PORT=5000
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=iq_didactic
+DB_USER=postgres
+DB_PASSWORD=your_password
+JWT_SECRET=your-secret-key
+JWT_EXPIRE=7d
+FRONTEND_URL=http://localhost:3000
+```
 
-### Dashboards
+## 🛠️ Development
+
+### Run Frontend
+```bash
+npm start
+```
+
+### Run Backend
+```bash
+cd backend
+npm run dev
+```
+
+### Build for Production
+```bash
+npm run build
+```
+
+## 🚀 Deployment
+
+### Frontend (Vercel/Netlify)
+1. Push to GitHub
+2. Connect to Vercel/Netlify
+3. Set environment variable: `REACT_APP_API_URL`
+4. Deploy!
+
+### Backend (Railway/Render)
+1. Push backend to GitHub
+2. Create PostgreSQL database
+3. Create Web Service
+4. Set all environment variables
+5. Deploy!
+
+See `backend/README.md` for detailed deployment instructions.
+
+## 📝 Features Connected to Backend
+
+| Feature | Status |
+|---------|--------|
+| Login/Signup | ✅ Connected |
+| Session Persistence | ✅ Connected |
+| Student Dashboard | ✅ Connected |
+| Course Enrollment | ✅ Connected |
+| User Profile | ✅ Connected |
+| Achievements | ✅ Connected |
+| Certificates | ✅ Connected |
+| Teacher Dashboard | ✅ Connected |
+| Course View | ✅ Connected |
+| Progress Tracking | ✅ Connected |
+| Quizzes | ✅ Connected |
+| Reviews | ✅ Connected |
+| Discussions | ✅ Connected |
+
+## 👥 Default Test Accounts
+
+After signup, you can create accounts with different roles:
 
 **Student:**
-- Welcome hero section
-- Quick stats cards
-- "Continue Learning" section
-- Course grid with progress
+- Register with role: "student"
 
 **Teacher:**
-- Course management cards
-- Student analytics
-- AI assistant shortcut
-- Create course button
+- Register with role: "teacher"
 
 **Admin:**
-- Platform metrics
-- User management
-- Course oversight
-- System settings toggles
+- Must be set manually in database
 
-### Course View
-- Responsive video player
-- YouTube embed support
-- Lesson sidebar with progress
-- Glass design throughout
+## 🐛 Troubleshooting
 
-### AI Teacher
-- Chat-style interface
-- Simulated AI responses
-- Quick suggestion chips
-- Pulsing avatar animation
+### Backend won't connect to database
+1. Ensure PostgreSQL is running
+2. Check database credentials in `backend/.env`
+3. Create database if it doesn't exist
 
-## 🛠️ Technologies
+### Frontend API calls failing
+1. Check backend is running on port 5000
+2. Verify `REACT_APP_API_URL` in `.env`
+3. Check browser console for CORS errors
 
-- **React 18.2** - UI framework
-- **React Router 6** - Navigation
-- **Lucide React** - Icons
-- **CSS3** - Styling with glassmorphism
-- **Create React App** - Build tooling
+### "Token expired" errors
+1. Clear localStorage
+2. Login again
 
-## 📱 Responsive Design
+## 📚 Resources
 
-The app is fully responsive:
-- **Desktop**: Full layout with sidebars
-- **Tablet**: Adjusted grid layouts
-- **Mobile**: Single column, stacked elements
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+- API Docs: http://localhost:5000/api
+- Backend README: `backend/README.md`
 
-## 🎥 Video Player
+## 📝 License
 
-The video player supports:
-- YouTube embed URLs
-- Play overlay
-- Lesson navigation
-- Progress tracking (UI only)
-- Responsive aspect ratio
+MIT
 
-## 🤖 AI Features
+## 🤝 Support
 
-The AI Teacher demo includes:
-- Chat interface
-- Simulated responses (1-second delay)
-- Message history
-- Quick suggestions
-- Online status indicator
-
-## 🚧 Limitations
-
-- **No Backend**: All data is in-memory, resets on refresh
-- **No Authentication**: Any credentials will work
-- **No Database**: Course data is hardcoded
-- **Simulated AI**: AI responses are pre-scripted
-- **No Real Video Upload**: Only YouTube embeds
-
-## 🔧 Building for Production
-
-```bash
-# Create optimized production build
-npm run build
-
-# The build folder will contain your production files
-# Deploy the build folder to any static hosting service
-```
-
-## 📝 Presenting to Clients
-
-### Tips:
-1. **Start with the loader** - Shows attention to detail
-2. **Demo all 3 roles** - Student → Teacher → Admin
-3. **Show video player** - Play a YouTube video
-4. **Interact with AI** - Type a question, show response
-5. **Highlight glassmorphism** - Point out the Apple-style design
-6. **Show responsiveness** - Resize browser window
-
-### Key Selling Points:
-- Modern, professional Apple-inspired design
-- Smooth animations and transitions
-- Role-based access control
-- AI-powered learning assistant
-- Beautiful video learning experience
-- Fully responsive across devices
-
-## 🎨 Design Philosophy
-
-This demo follows Apple's design principles:
-- **Minimalism**: Clean, uncluttered interfaces
-- **Typography**: Inter font with precise spacing
-- **Glassmorphism**: Translucent layers with blur
-- **Animations**: Smooth, purposeful motion
-- **White Space**: Generous padding and margins
-- **Contrast**: Black background, white accents
-
-## 📄 License
-
-MIT License - Feel free to use this for client demos and presentations.
-
-## 🙋 Support
-
-For questions or issues:
-- Open an issue on GitHub
-- Contact: lottie@iqdidactic.app
-
-## 🎉 Credits
-
-Built with ❤️ by ZeroAI Technologies for IQ Didactic
+For issues or questions:
+- Create GitHub issue
+- Email: support@iqdidactic.com
 
 ---
 
-**Ready to present?** Clone, customize, and wow your clients! 🚀
+**Built with ❤️ by Lottie Mukuka**
+
+**Demo:** Full-stack LMS with React + Node.js + PostgreSQL
