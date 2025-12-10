@@ -1,49 +1,32 @@
 const errorHandler = (err, req, res, next) => {
+  console.error('Error:', err);
+
   let error = { ...err };
   error.message = err.message;
-
-  // Log error for debugging
-  if (process.env.NODE_ENV === 'development') {
-    console.error('❌ Error:', err);
-  }
 
   // Sequelize validation error
   if (err.name === 'SequelizeValidationError') {
     const message = err.errors.map(e => e.message).join(', ');
-    error = {
-      statusCode: 400,
-      message
-    };
+    error = { message, statusCode: 400 };
   }
 
   // Sequelize unique constraint error
   if (err.name === 'SequelizeUniqueConstraintError') {
-    const message = 'Duplicate field value entered';
-    error = {
-      statusCode: 400,
-      message
-    };
+    error = { message: 'Duplicate field value entered', statusCode: 400 };
   }
 
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
-    error = {
-      statusCode: 401,
-      message: 'Invalid token'
-    };
+    error = { message: 'Invalid token', statusCode: 401 };
   }
 
   if (err.name === 'TokenExpiredError') {
-    error = {
-      statusCode: 401,
-      message: 'Token expired'
-    };
+    error = { message: 'Token expired', statusCode: 401 };
   }
 
   res.status(error.statusCode || 500).json({
     success: false,
-    message: error.message || 'Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: error.message || 'Server Error'
   });
 };
 
