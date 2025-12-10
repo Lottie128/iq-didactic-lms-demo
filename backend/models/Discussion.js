@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const Discussion = db.define('Discussion', {
+const Discussion = sequelize.define('Discussion', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -9,19 +9,11 @@ const Discussion = db.define('Discussion', {
   },
   courseId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'courses',
-      key: 'id'
-    }
+    allowNull: false
   },
   userId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    allowNull: false
   },
   title: {
     type: DataTypes.STRING,
@@ -39,11 +31,11 @@ const Discussion = db.define('Discussion', {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  isPinned: {
+  solved: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-  isSolved: {
+  pinned: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   }

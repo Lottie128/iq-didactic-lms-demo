@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const Lesson = db.define('Lesson', {
+const Lesson = sequelize.define('Lesson', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -9,11 +9,7 @@ const Lesson = db.define('Lesson', {
   },
   courseId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'courses',
-      key: 'id'
-    }
+    allowNull: false
   },
   title: {
     type: DataTypes.STRING,
@@ -28,16 +24,16 @@ const Lesson = db.define('Lesson', {
     allowNull: true
   },
   duration: {
-    type: DataTypes.STRING,
-    allowNull: true
+    type: DataTypes.INTEGER,
+    comment: 'Duration in seconds'
   },
   order: {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  content: {
-    type: DataTypes.TEXT,
-    allowNull: true
+  published: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   resources: {
     type: DataTypes.JSONB,

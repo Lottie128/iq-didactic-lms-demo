@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const Quiz = db.define('Quiz', {
+const Quiz = sequelize.define('Quiz', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -9,11 +9,7 @@ const Quiz = db.define('Quiz', {
   },
   courseId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'courses',
-      key: 'id'
-    }
+    allowNull: false
   },
   title: {
     type: DataTypes.STRING,
@@ -28,27 +24,23 @@ const Quiz = db.define('Quiz', {
     allowNull: false,
     defaultValue: []
   },
-  passingScore: {
-    type: DataTypes.INTEGER,
-    defaultValue: 70,
-    validate: {
-      min: 0,
-      max: 100
-    }
-  },
   timeLimit: {
     type: DataTypes.INTEGER,
     allowNull: true,
     comment: 'Time limit in minutes'
   },
-  attempts: {
+  passingScore: {
     type: DataTypes.INTEGER,
-    defaultValue: 3,
-    comment: 'Maximum attempts allowed'
+    defaultValue: 70,
+    comment: 'Percentage required to pass'
   },
-  isPublished: {
+  published: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: false
+  },
+  order: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   }
 }, {
   tableName: 'quizzes',

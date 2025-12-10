@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const Progress = db.define('Progress', {
+const Progress = sequelize.define('Progress', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -9,29 +9,17 @@ const Progress = db.define('Progress', {
   },
   userId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    allowNull: false
   },
   courseId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'courses',
-      key: 'id'
-    }
+    allowNull: false
   },
   lessonId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'lessons',
-      key: 'id'
-    }
+    allowNull: false
   },
-  isCompleted: {
+  completed: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
@@ -48,16 +36,14 @@ const Progress = db.define('Progress', {
   completedAt: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  attempts: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   }
 }, {
   tableName: 'progress',
-  timestamps: true,
-  indexes: [
-    {
-      unique: true,
-      fields: ['userId', 'lessonId']
-    }
-  ]
+  timestamps: true
 });
 
 module.exports = Progress;

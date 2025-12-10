@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const Enrollment = db.define('Enrollment', {
+const Enrollment = sequelize.define('Enrollment', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -9,53 +9,43 @@ const Enrollment = db.define('Enrollment', {
   },
   userId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    allowNull: false
   },
   courseId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'courses',
-      key: 'id'
-    }
+    allowNull: false
   },
   progress: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0,
-    validate: {
-      min: 0,
-      max: 100
-    }
+    type: DataTypes.FLOAT,
+    defaultValue: 0
   },
-  completedLessons: {
-    type: DataTypes.JSONB,
-    defaultValue: []
-  },
-  lastAccessedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+  completed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   completedAt: {
     type: DataTypes.DATE,
     allowNull: true
   },
-  isCompleted: {
+  lastAccessedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  certificateIssued: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  rating: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: {
+      min: 1,
+      max: 5
+    }
   }
 }, {
   tableName: 'enrollments',
-  timestamps: true,
-  indexes: [
-    {
-      unique: true,
-      fields: ['userId', 'courseId']
-    }
-  ]
+  timestamps: true
 });
 
 module.exports = Enrollment;

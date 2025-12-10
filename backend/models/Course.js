@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const Course = db.define('Course', {
+const Course = sequelize.define('Course', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -19,49 +19,45 @@ const Course = db.define('Course', {
     type: DataTypes.STRING,
     allowNull: false
   },
-  level: {
-    type: DataTypes.ENUM('Beginner', 'Intermediate', 'Advanced'),
-    defaultValue: 'Beginner'
+  thumbnail: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   duration: {
     type: DataTypes.STRING,
     allowNull: true
   },
-  thumbnail: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  instructorId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+  level: {
+    type: DataTypes.ENUM('beginner', 'intermediate', 'advanced'),
+    defaultValue: 'beginner'
   },
   price: {
     type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0.00
+    defaultValue: 0
   },
-  isPaid: {
+  published: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  averageRating: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0
   },
   enrollmentCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  averageRating: {
-    type: DataTypes.DECIMAL(3, 2),
-    defaultValue: 0.00
+  videos: {
+    type: DataTypes.JSONB,
+    defaultValue: []
   },
-  reviewCount: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0
+  requirements: {
+    type: DataTypes.TEXT,
+    allowNull: true
   },
-  isPublished: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
+  whatYouLearn: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'courses',

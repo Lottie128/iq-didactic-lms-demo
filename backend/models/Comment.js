@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const Comment = db.define('Comment', {
+const Comment = sequelize.define('Comment', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -9,46 +9,36 @@ const Comment = db.define('Comment', {
   },
   discussionId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'discussions',
-      key: 'id'
-    }
+    allowNull: false
   },
   userId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    allowNull: false
   },
   content: {
     type: DataTypes.TEXT,
     allowNull: false
   },
+  parentId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    comment: 'For threaded comments'
+  },
   upvotes: {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  isBestAnswer: {
+  bestAnswer: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-  parentId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: 'comments',
-      key: 'id'
-    }
+  edited: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'comments',
   timestamps: true
 });
-
-Comment.hasMany(Comment, { as: 'replies', foreignKey: 'parentId' });
-Comment.belongsTo(Comment, { as: 'parent', foreignKey: 'parentId' });
 
 module.exports = Comment;

@@ -1,27 +1,19 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const QuizSubmission = db.define('QuizSubmission', {
+const QuizSubmission = sequelize.define('QuizSubmission', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  quizId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'quizzes',
-      key: 'id'
-    }
-  },
   userId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    allowNull: false
+  },
+  quizId: {
+    type: DataTypes.UUID,
+    allowNull: false
   },
   answers: {
     type: DataTypes.JSONB,
@@ -29,28 +21,25 @@ const QuizSubmission = db.define('QuizSubmission', {
     defaultValue: {}
   },
   score: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    validate: {
-      min: 0,
-      max: 100
-    }
+    type: DataTypes.FLOAT,
+    allowNull: false
   },
-  isPassed: {
+  passed: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
-  },
-  attemptNumber: {
-    type: DataTypes.INTEGER,
-    defaultValue: 1
+    allowNull: false
   },
   timeSpent: {
     type: DataTypes.INTEGER,
     comment: 'Time spent in seconds'
   },
-  submittedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW
+  aiProctoring: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    comment: 'AI proctoring data from frontend'
+  },
+  attempt: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
   }
 }, {
   tableName: 'quiz_submissions',

@@ -1,27 +1,19 @@
 const { DataTypes } = require('sequelize');
-const db = require('../config/db');
+const { sequelize } = require('../config/db');
 
-const Review = db.define('Review', {
+const Review = sequelize.define('Review', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  courseId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'courses',
-      key: 'id'
-    }
-  },
   userId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    allowNull: false
+  },
+  courseId: {
+    type: DataTypes.UUID,
+    allowNull: false
   },
   rating: {
     type: DataTypes.INTEGER,
@@ -35,23 +27,22 @@ const Review = db.define('Review', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  helpfulCount: {
+  helpful: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    comment: 'Number of users who found this helpful'
+  },
+  notHelpful: {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  notHelpfulCount: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0
+  edited: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'reviews',
-  timestamps: true,
-  indexes: [
-    {
-      unique: true,
-      fields: ['userId', 'courseId']
-    }
-  ]
+  timestamps: true
 });
 
 module.exports = Review;
