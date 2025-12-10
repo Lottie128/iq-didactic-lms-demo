@@ -1,70 +1,62 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-const db = require('./config/db');
-const errorHandler = require('./middleware/errorHandler');
-
-// Import routes
+const { sequelize, testConnection, syncDatabase } = require('./config/db');
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const courseRoutes = require('./routes/courses');
+const progressRoutes = require('./routes/progress');
+const quizRoutes = require('./routes/quizzes');
+const reviewRoutes = require('./routes/reviews');
+const discussionRoutes = require('./routes/discussions');
+const achievementRoutes = require('./routes/achievements');
+const certificateRoutes = require('./routes/certificates');
+const notificationRoutes = require('./routes/notifications');
+const adminRoutes = require('./routes/admin');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-// Security middleware
+// Middleware
 app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api/', limiter);
-
-// Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Test database connection
-db.authenticate()
-  .then(() => console.log('✅ PostgreSQL Connected'))
-  .catch(err => console.error('❌ Database connection error:', err));
-
-// Sync database (development only)
-if (process.env.NODE_ENV === 'development') {
-  db.sync({ alter: true })
-    .then(() => console.log('✅ Database synced'))
-    .catch(err => console.error('❌ Database sync error:', err));
-}
-
-// Routes
+// Health check endpoint
 app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'IQ Didactic API Server',
     version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      users: '/api/users',
-      courses: '/api/courses',
-      quizzes: '/api/quizzes',
-      reviews: '/api/reviews',
-      discussions: '/api/discussions',
-      achievements: '/api/achievements',
-      admin: '/api/admin'
-    }
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 });
 
-app.use('/api/auth', authRoutes);
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', uptime: process.uptime() });
+});
 
-// Error handler (must be last)
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/quizzes', quizRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/discussions', discussionRoutes);
+app.use('/api/achievements', achievementRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Error handling middleware
 app.use(errorHandler);
 
 // 404 handler
@@ -77,11 +69,31 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 API URL: http://localhost:${PORT}`);
-  console.log(`📚 Docs: http://localhost:${PORT}/api/docs\n`);
-});
+// Initialize server
+const startServer = async () => {
+  try {
+    // Test database connection
+    const dbConnected = await testConnection();
+    if (!dbConnected) {
+      console.error('Failed to connect to database. Exiting...');
+      process.exit(1);
+    }
+
+    // Sync database
+    await syncDatabase();
+
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+      console.log(`🌐 API URL: http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 module.exports = app;
