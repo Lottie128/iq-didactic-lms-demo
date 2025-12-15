@@ -9,7 +9,7 @@ exports.getAllCourses = async (req, res, next) => {
     const { category, level, search, page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
 
-    const where = { isPublished: true };
+    const where = { published: true };
     if (category) where.category = category;
     if (level) where.level = level;
     if (search) {
