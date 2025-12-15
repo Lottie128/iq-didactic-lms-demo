@@ -161,6 +161,44 @@ export const courseAPI = {
   }
 };
 
+// Lesson APIs
+export const lessonAPI = {
+  async getCourseLessons(courseId) {
+    return await authFetch(`${API_URL}/lessons/course/${courseId}`);
+  },
+
+  async getLessonById(id) {
+    return await authFetch(`${API_URL}/lessons/${id}`);
+  },
+
+  async createLesson(lessonData) {
+    return await authFetch(`${API_URL}/lessons`, {
+      method: 'POST',
+      body: JSON.stringify(lessonData)
+    });
+  },
+
+  async updateLesson(id, lessonData) {
+    return await authFetch(`${API_URL}/lessons/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(lessonData)
+    });
+  },
+
+  async deleteLesson(id) {
+    return await authFetch(`${API_URL}/lessons/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async reorderLessons(courseId, lessonOrders) {
+    return await authFetch(`${API_URL}/lessons/reorder`, {
+      method: 'POST',
+      body: JSON.stringify({ courseId, lessonOrders })
+    });
+  }
+};
+
 // Progress APIs
 export const progressAPI = {
   async getCourseProgress(courseId) {
@@ -416,6 +454,7 @@ export default {
   auth: authAPI,
   user: userAPI,
   course: courseAPI,
+  lesson: lessonAPI,
   progress: progressAPI,
   quiz: quizAPI,
   review: reviewAPI,
