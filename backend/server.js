@@ -7,6 +7,7 @@ const { sequelize, testConnection, syncDatabase } = require('./config/db');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const courseRoutes = require('./routes/courses');
+const lessonRoutes = require('./routes/lessons');
 const progressRoutes = require('./routes/progress');
 const quizRoutes = require('./routes/quizzes');
 const reviewRoutes = require('./routes/reviews');
@@ -47,6 +48,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/lessons', lessonRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/reviews', reviewRoutes);
