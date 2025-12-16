@@ -1,41 +1,110 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Upload, Video, Sparkles, LogOut, Trash2 } from 'lucide-react';
-import { demoCourses } from '../data/demoCourses';
+import { ArrowLeft, Plus, X, Upload, Video, Sparkles, LogOut, Trash2, Save } from 'lucide-react';
+import { courseAPI } from '../services/api';
 import './CreateCourse.css';
 
 const EditCourse = ({ user, onLogout }) => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const course = demoCourses.find(c => c.id === parseInt(id));
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
-    title: course?.title || '',
-    description: course?.description || '',
-    category: course?.category || '',
-    level: course?.level || 'Beginner',
-    duration: course?.duration || '',
-    instructor: course?.instructor || user?.name || ''
+    title: '',
+    description: '',
+    category: '',
+    level: 'beginner',
+    duration: '',
+    price: 0,
+    thumbnail: ''
   });
-  const [videos, setVideos] = useState(course?.videos || []);
+  const [videos, setVideos] = useState([]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Course updated:', { ...formData, videos });
-    alert('Course updated successfully! (Demo only)');
-    navigate(-1);
+  useEffect(() => {
+    loadCourse();
+  }, [id]);
+
+  const loadCourse = async () => {
+    try {
+      setLoading(true);
+      const response = await courseAPI.getCourseById(id);
+      const course = response.data;
+      
+      setFormData({
+        title: course.title || '',
+        description: course.description || '',
+        category: course.category || '',
+        level: course.level || 'beginner',
+        duration: course.duration || '',
+        price: course.price || 0,
+        thumbnail: course.thumbnail || ''
+      });
+
+      // Load videos from lessons or videos array
+      if (course.lessons && course.lessons.length > 0) {
+        setVideos(course.lessons.map(l => ({
+          id: l.id,
+          title: l.title,
+          youtubeUrl: l.videoUrl || l.url || '',
+          duration: l.duration || ''
+        })));
+      } else if (course.videos && course.videos.length > 0) {
+        setVideos(course.videos);
+      }
+    } catch (error) {
+      console.error('Error loading course:', error);
+      setError('Failed to load course');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setSaving(true);
+
+    try {
+      await courseAPI.updateCourse(id, {
+        ...formData,
+        videos: videos.map(v => ({
+          title: v.title,
+          url: v.youtubeUrl,
+          duration: v.duration
+        }))
+      });
+
+      setSuccess('Course updated successfully!');
+      setTimeout(() => {
+        navigate(`/course/${id}`);
+      }, 2000);
+    } catch (error) {
+      console.error('Error updating course:', error);
+      setError(error.message || 'Failed to update course');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-      console.log('Course deleted:', course.id);
-      alert('Course deleted! (Demo only)');
-      navigate('/teacher');
+      try {
+        await courseAPI.deleteCourse(id);
+        alert('Course deleted successfully!');
+        navigate('/teacher');
+      } catch (error) {
+        console.error('Error deleting course:', error);
+        alert('Failed to delete course: ' + error.message);
+      }
     }
   };
 
   const addVideo = () => {
-    setVideos([...videos, { id: videos.length + 1, title: '', youtubeUrl: '', duration: '' }]);
+    setVideos([...videos, { id: Date.now(), title: '', youtubeUrl: '', duration: '' }]);
   };
 
   const removeVideo = (id) => {
@@ -46,8 +115,30 @@ const EditCourse = ({ user, onLogout }) => {
     setVideos(videos.map(v => v.id === id ? { ...v, [field]: value } : v));
   };
 
-  if (!course) {
-    return <div className="dashboard-root"><p>Course not found</p></div>;
+  if (loading) {
+    return (
+      <div className="create-course-root">
+        <div className="dashboard-bg" />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <div className="loader">Loading course...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !formData.title) {
+    return (
+      <div className="create-course-root">
+        <div className="dashboard-bg" />
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '20px' }}>
+          <p style={{ fontSize: '18px', opacity: 0.7 }}>Course not found</p>
+          <button className="btn btn-primary" onClick={() => navigate(-1)}>
+            <ArrowLeft size={16} />
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -61,7 +152,7 @@ const EditCourse = ({ user, onLogout }) => {
           </button>
           <div className="header-title">
             <h2>Edit Course</h2>
-            <p>{course.title}</p>
+            <p>{formData.title}</p>
           </div>
         </div>
         <nav className="header-nav">
@@ -80,6 +171,18 @@ const EditCourse = ({ user, onLogout }) => {
       </header>
 
       <main className="create-course-main fade-in">
+        {error && (
+          <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px' }}>
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px' }}>
+            {success}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="course-form">
           <section className="form-section glass-strong">
             <h3>Basic Information</h3>
@@ -110,14 +213,18 @@ const EditCourse = ({ user, onLogout }) => {
 
               <div className="form-field">
                 <label>Category *</label>
-                <input
+                <select
                   className="input"
-                  type="text"
-                  placeholder="e.g., Programming"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  required
-                />
+                >
+                  <option>Programming</option>
+                  <option>Design</option>
+                  <option>Business</option>
+                  <option>Marketing</option>
+                  <option>Data Science</option>
+                  <option>AI & ML</option>
+                </select>
               </div>
 
               <div className="form-field">
@@ -127,9 +234,9 @@ const EditCourse = ({ user, onLogout }) => {
                   value={formData.level}
                   onChange={(e) => setFormData({ ...formData, level: e.target.value })}
                 >
-                  <option>Beginner</option>
-                  <option>Intermediate</option>
-                  <option>Advanced</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
                 </select>
               </div>
 
@@ -145,12 +252,24 @@ const EditCourse = ({ user, onLogout }) => {
               </div>
 
               <div className="form-field">
-                <label>Instructor</label>
+                <label>Price ($)</label>
                 <input
                   className="input"
-                  type="text"
-                  value={formData.instructor}
-                  onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                  type="number"
+                  placeholder="0 for free"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                />
+              </div>
+
+              <div className="form-field full-width">
+                <label>Thumbnail URL</label>
+                <input
+                  className="input"
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={formData.thumbnail}
+                  onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
                 />
               </div>
             </div>
@@ -195,17 +314,17 @@ const EditCourse = ({ user, onLogout }) => {
                       <input
                         className="input"
                         type="url"
-                        placeholder="https://www.youtube.com/embed/..."
+                        placeholder="https://www.youtube.com/watch?v=..."
                         value={video.youtubeUrl}
                         onChange={(e) => updateVideo(video.id, 'youtubeUrl', e.target.value)}
                       />
                     </div>
                     <div className="form-field">
-                      <label>Duration</label>
+                      <label>Duration (minutes)</label>
                       <input
                         className="input"
-                        type="text"
-                        placeholder="e.g., 12:30"
+                        type="number"
+                        placeholder="e.g., 15"
                         value={video.duration}
                         onChange={(e) => updateVideo(video.id, 'duration', e.target.value)}
                       />
@@ -216,29 +335,22 @@ const EditCourse = ({ user, onLogout }) => {
             </div>
           </section>
 
-          <section className="form-section glass-strong">
-            <h3>Course Thumbnail</h3>
-            <div className="upload-area">
-              <Upload size={32} />
-              <p>Drag and drop an image, or click to browse</p>
-              <input type="file" accept="image/*" style={{ display: 'none' }} />
-              <button type="button" className="btn btn-secondary">
-                Change Thumbnail
-              </button>
-              <span className="upload-hint">Recommended: 1280x720px, JPG or PNG</span>
-            </div>
-          </section>
-
           <div className="form-actions">
-            <button type="button" className="btn btn-secondary" onClick={handleDelete} style={{ marginRight: 'auto', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+            <button 
+              type="button" 
+              className="btn btn-secondary" 
+              onClick={handleDelete} 
+              style={{ marginRight: 'auto', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444' }}
+            >
               <Trash2 size={16} />
               Delete Course
             </button>
             <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
-              Save Changes
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              <Save size={16} />
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
