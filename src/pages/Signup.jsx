@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Phone, Globe, MapPin, Calendar, GraduationCap, Briefcase, Eye, EyeOff } from 'lucide-react';
 import ThemeToggler from '../components/ThemeToggler';
+import { authAPI } from '../services/api';
 import './Auth.css';
 
 const Signup = ({ onSignup }) => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -21,13 +24,42 @@ const Signup = ({ onSignup }) => {
     role: 'student'
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
+      setLoading(false);
       return;
     }
-    onSignup({ name: formData.name, email: formData.email, role: formData.role });
+
+    // Validate password length
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Prepare data for API (exclude confirmPassword)
+      const { confirmPassword, ...registrationData } = formData;
+
+      // Call register API
+      const response = await authAPI.register(registrationData);
+      
+      if (response.success) {
+        // Token and user are already saved in localStorage by authAPI.register()
+        onSignup(response.user);
+        navigate(`/${response.user.role}`);
+      }
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,6 +78,20 @@ const Signup = ({ onSignup }) => {
             <p>Join IQ Didactic and start learning today</p>
           </div>
 
+          {error && (
+            <div style={{
+              padding: '12px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '8px',
+              color: '#ef4444',
+              marginBottom: '20px',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
+
           <form className="auth-form" onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-field">
@@ -57,6 +103,7 @@ const Signup = ({ onSignup }) => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -69,6 +116,7 @@ const Signup = ({ onSignup }) => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -83,6 +131,7 @@ const Signup = ({ onSignup }) => {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -94,6 +143,7 @@ const Signup = ({ onSignup }) => {
                   value={formData.birthday}
                   onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -106,6 +156,7 @@ const Signup = ({ onSignup }) => {
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                   required
+                  disabled={loading}
                 >
                   <option value="">Select Country</option>
                   <option value="Zambia">Zambia</option>
@@ -135,6 +186,7 @@ const Signup = ({ onSignup }) => {
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -149,6 +201,7 @@ const Signup = ({ onSignup }) => {
                   value={formData.occupation}
                   onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -159,6 +212,7 @@ const Signup = ({ onSignup }) => {
                   value={formData.educationLevel}
                   onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
                   required
+                  disabled={loading}
                 >
                   <option value="">Select Level</option>
                   <option value="High School">High School</option>
@@ -179,6 +233,7 @@ const Signup = ({ onSignup }) => {
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 required
+                disabled={loading}
               >
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
@@ -197,11 +252,13 @@ const Signup = ({ onSignup }) => {
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
                     minLength={8}
+                    disabled={loading}
                   />
                   <button
                     type="button"
                     className="password-toggle"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -218,26 +275,31 @@ const Signup = ({ onSignup }) => {
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
 
             <div className="terms-check">
-              <input type="checkbox" id="terms" required />
+              <input type="checkbox" id="terms" required disabled={loading} />
               <label htmlFor="terms">
                 I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
               </label>
             </div>
 
-            <button type="submit" className="btn btn-primary btn-full">
-              Create Account
+            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
           <div className="auth-footer">
             <p>
               Already have an account?
-              <button className="link-btn" onClick={() => navigate('/login')}>
+              <button 
+                className="link-btn" 
+                onClick={() => navigate('/login')}
+                disabled={loading}
+              >
                 Sign In
               </button>
             </p>
