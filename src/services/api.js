@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || 'iq-didactic-lms-demo-production.up.railway.app/api';
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Helper function to get auth token
 const getToken = () => {
