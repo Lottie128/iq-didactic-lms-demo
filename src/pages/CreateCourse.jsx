@@ -116,56 +116,104 @@ const CreateCourse = ({ user, onLogout }) => {
     setSaving(true);
 
     try {
-      // Create course
+      console.log('Creating course with data:', courseData);
+      
+      // Create course WITHOUT videos field
       const courseResponse = await courseAPI.createCourse({
-        ...courseData,
-        videos: lessons.filter(l => l.type === 'video').map(l => ({
-          title: l.title,
-          url: l.url,
-          duration: l.duration
-        }))
+        title: courseData.title,
+        description: courseData.description,
+        category: courseData.category,
+        level: courseData.level,
+        duration: courseData.duration,
+        price: courseData.price,
+        thumbnail: courseData.thumbnail
       });
 
-      const courseId = courseResponse.data.id;
+      console.log('Course created:', courseResponse);
+
+      const courseId = courseResponse.data?.id;
+
+      if (!courseId) {
+        throw new Error('Course created but ID not returned');
+      }
 
       // Create lessons
+      let lessonsCreated = 0;
       for (const lesson of lessons) {
-        await lessonAPI.createLesson({
-          courseId,
-          title: lesson.title,
-          type: lesson.type,
-          content: lesson.content || lesson.url,
-          duration: lesson.duration,
-          order: lesson.order
-        });
+        try {
+          console.log('Creating lesson:', lesson);
+          
+          // Prepare lesson data based on type
+          const lessonData = {
+            courseId: courseId,
+            title: lesson.title,
+            type: lesson.type,
+            order: lesson.order
+          };
+
+          // Add type-specific fields
+          if (lesson.type === 'video') {
+            lessonData.videoUrl = lesson.url;
+            lessonData.duration = parseInt(lesson.duration) || 0;
+          } else if (lesson.type === 'text') {
+            lessonData.description = lesson.content;
+          } else if (lesson.type === 'image') {
+            lessonData.videoUrl = lesson.url; // Store image URL in videoUrl field
+            lessonData.description = lesson.content;
+          }
+
+          const lessonResponse = await lessonAPI.createLesson(lessonData);
+          console.log('Lesson created:', lessonResponse);
+          lessonsCreated++;
+        } catch (lessonError) {
+          console.error('Error creating lesson:', lesson.title, lessonError);
+          // Continue with other lessons
+        }
       }
+
+      console.log(`Created ${lessonsCreated} of ${lessons.length} lessons`);
 
       // Create quizzes
+      let quizzesCreated = 0;
       for (const quiz of quizzes) {
-        await quizAPI.createQuiz({
-          courseId,
-          title: quiz.title,
-          description: quiz.description,
-          timeLimit: quiz.timeLimit,
-          passingScore: quiz.passingScore,
-          questions: quiz.questions.map(q => ({
-            question: q.question,
-            type: q.type,
-            options: q.options,
-            correctAnswer: q.correctAnswer,
-            explanation: q.explanation
-          }))
-        });
+        try {
+          console.log('Creating quiz:', quiz);
+          
+          const quizResponse = await quizAPI.createQuiz({
+            courseId: courseId,
+            title: quiz.title,
+            description: quiz.description,
+            timeLimit: quiz.timeLimit,
+            passingScore: quiz.passingScore,
+            questions: quiz.questions.map(q => ({
+              question: q.question,
+              type: q.type,
+              options: q.options,
+              correctAnswer: q.correctAnswer,
+              explanation: q.explanation || ''
+            }))
+          });
+          
+          console.log('Quiz created:', quizResponse);
+          quizzesCreated++;
+        } catch (quizError) {
+          console.error('Error creating quiz:', quiz.title, quizError);
+          // Continue with other quizzes
+        }
       }
 
-      setSuccess('Course created successfully!');
+      console.log(`Created ${quizzesCreated} of ${quizzes.length} quizzes`);
+
+      setSuccess(`Course "${courseData.title}" created successfully! (${lessonsCreated} lessons, ${quizzesCreated} quizzes)`);
+      
       setTimeout(() => {
-        navigate(`/course/${courseId}`);
+        // Redirect to teacher dashboard to see the course
+        navigate('/teacher');
       }, 2000);
 
     } catch (error) {
       console.error('Error creating course:', error);
-      setError(error.message || 'Failed to create course');
+      setError(error.message || 'Failed to create course. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -317,29 +365,7 @@ const CreateCourse = ({ user, onLogout }) => {
                       type="number"
                       placeholder="0 for free"
                       value={courseData.price}
-                      onChange={(e) => setCourseData({ ...courseData, price: parseFloat(e.target.value) })}
-                    />
-                  </div>
-
-                  <div className="form-field full-width">
-                    <label>What Students Will Learn</label>
-                    <textarea
-                      className="input textarea"
-                      placeholder="List key learning outcomes (one per line)..."
-                      value={courseData.whatYouLearn}
-                      onChange={(e) => setCourseData({ ...courseData, whatYouLearn: e.target.value })}
-                      rows={4}
-                    />
-                  </div>
-
-                  <div className="form-field full-width">
-                    <label>Requirements</label>
-                    <textarea
-                      className="input textarea"
-                      placeholder="Prerequisites and required knowledge..."
-                      value={courseData.requirements}
-                      onChange={(e) => setCourseData({ ...courseData, requirements: e.target.value })}
-                      rows={3}
+                      onChange={(e) => setCourseData({ ...courseData, price: parseFloat(e.target.value) || 0 })}
                     />
                   </div>
 
