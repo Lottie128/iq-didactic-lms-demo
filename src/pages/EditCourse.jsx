@@ -24,14 +24,25 @@ const EditCourse = ({ user, onLogout }) => {
   const [videos, setVideos] = useState([]);
 
   useEffect(() => {
+    console.log('EditCourse: Loading course with ID:', id);
     loadCourse();
   }, [id]);
 
   const loadCourse = async () => {
     try {
       setLoading(true);
+      setError('');
+      
+      console.log('EditCourse: Fetching course from API...');
       const response = await courseAPI.getCourseById(id);
+      console.log('EditCourse: API Response:', response);
+      
       const course = response.data;
+      console.log('EditCourse: Course data:', course);
+      
+      if (!course) {
+        throw new Error('No course data received from API');
+      }
       
       setFormData({
         title: course.title || '',
@@ -45,6 +56,7 @@ const EditCourse = ({ user, onLogout }) => {
 
       // Load videos from lessons or videos array
       if (course.lessons && course.lessons.length > 0) {
+        console.log('EditCourse: Loading lessons:', course.lessons);
         setVideos(course.lessons.map(l => ({
           id: l.id,
           title: l.title,
@@ -52,11 +64,22 @@ const EditCourse = ({ user, onLogout }) => {
           duration: l.duration || ''
         })));
       } else if (course.videos && course.videos.length > 0) {
+        console.log('EditCourse: Loading videos:', course.videos);
         setVideos(course.videos);
+      } else {
+        console.log('EditCourse: No lessons or videos found');
+        setVideos([]);
       }
+      
+      console.log('EditCourse: Course loaded successfully');
     } catch (error) {
-      console.error('Error loading course:', error);
-      setError('Failed to load course');
+      console.error('EditCourse: Error loading course:', error);
+      console.error('EditCourse: Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status
+      });
+      setError(`Failed to load course: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -69,6 +92,7 @@ const EditCourse = ({ user, onLogout }) => {
     setSaving(true);
 
     try {
+      console.log('EditCourse: Updating course with data:', formData);
       await courseAPI.updateCourse(id, {
         ...formData,
         videos: videos.map(v => ({
@@ -83,7 +107,7 @@ const EditCourse = ({ user, onLogout }) => {
         navigate(`/course/${id}`);
       }, 2000);
     } catch (error) {
-      console.error('Error updating course:', error);
+      console.error('EditCourse: Error updating course:', error);
       setError(error.message || 'Failed to update course');
     } finally {
       setSaving(false);
@@ -97,7 +121,7 @@ const EditCourse = ({ user, onLogout }) => {
         alert('Course deleted successfully!');
         navigate('/teacher');
       } catch (error) {
-        console.error('Error deleting course:', error);
+        console.error('EditCourse: Error deleting course:', error);
         alert('Failed to delete course: ' + error.message);
       }
     }
@@ -130,11 +154,12 @@ const EditCourse = ({ user, onLogout }) => {
     return (
       <div className="create-course-root">
         <div className="dashboard-bg" />
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: '20px', padding: '20px' }}>
           <p style={{ fontSize: '18px', opacity: 0.7 }}>Course not found</p>
-          <button className="btn btn-primary" onClick={() => navigate(-1)}>
+          <p style={{ fontSize: '14px', opacity: 0.5, maxWidth: '500px', textAlign: 'center' }}>{error}</p>
+          <button className="btn btn-primary" onClick={() => navigate('/teacher')}>
             <ArrowLeft size={16} />
-            Go Back
+            Back to Dashboard
           </button>
         </div>
       </div>
@@ -171,7 +196,7 @@ const EditCourse = ({ user, onLogout }) => {
       </header>
 
       <main className="create-course-main fade-in">
-        {error && (
+        {error && formData.title && (
           <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px' }}>
             {error}
           </div>
@@ -284,55 +309,61 @@ const EditCourse = ({ user, onLogout }) => {
               </button>
             </div>
 
-            <div className="videos-list">
-              {videos.map((video, index) => (
-                <div key={video.id} className="video-item glass">
-                  <div className="video-header">
-                    <div className="video-number">
-                      <Video size={16} />
-                      <span>Lesson {index + 1}</span>
+            {videos.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', opacity: 0.6 }}>
+                <p>No lessons yet. Add video lessons to your course.</p>
+              </div>
+            ) : (
+              <div className="videos-list">
+                {videos.map((video, index) => (
+                  <div key={video.id} className="video-item glass">
+                    <div className="video-header">
+                      <div className="video-number">
+                        <Video size={16} />
+                        <span>Lesson {index + 1}</span>
+                      </div>
+                      {videos.length > 1 && (
+                        <button type="button" className="btn-icon-small" onClick={() => removeVideo(video.id)}>
+                          <X size={16} />
+                        </button>
+                      )}
                     </div>
-                    {videos.length > 1 && (
-                      <button type="button" className="btn-icon-small" onClick={() => removeVideo(video.id)}>
-                        <X size={16} />
-                      </button>
-                    )}
+                    <div className="video-fields">
+                      <div className="form-field full-width">
+                        <label>Video Title</label>
+                        <input
+                          className="input"
+                          type="text"
+                          placeholder="Lesson title"
+                          value={video.title}
+                          onChange={(e) => updateVideo(video.id, 'title', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>YouTube URL</label>
+                        <input
+                          className="input"
+                          type="url"
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          value={video.youtubeUrl}
+                          onChange={(e) => updateVideo(video.id, 'youtubeUrl', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Duration (minutes)</label>
+                        <input
+                          className="input"
+                          type="number"
+                          placeholder="e.g., 15"
+                          value={video.duration}
+                          onChange={(e) => updateVideo(video.id, 'duration', e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="video-fields">
-                    <div className="form-field full-width">
-                      <label>Video Title</label>
-                      <input
-                        className="input"
-                        type="text"
-                        placeholder="Lesson title"
-                        value={video.title}
-                        onChange={(e) => updateVideo(video.id, 'title', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label>YouTube URL</label>
-                      <input
-                        className="input"
-                        type="url"
-                        placeholder="https://www.youtube.com/watch?v=..."
-                        value={video.youtubeUrl}
-                        onChange={(e) => updateVideo(video.id, 'youtubeUrl', e.target.value)}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label>Duration (minutes)</label>
-                      <input
-                        className="input"
-                        type="number"
-                        placeholder="e.g., 15"
-                        value={video.duration}
-                        onChange={(e) => updateVideo(video.id, 'duration', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
 
           <div className="form-actions">
@@ -345,7 +376,7 @@ const EditCourse = ({ user, onLogout }) => {
               <Trash2 size={16} />
               Delete Course
             </button>
-            <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>
+            <button type="button" className="btn btn-secondary" onClick={() => navigate('/teacher')}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
