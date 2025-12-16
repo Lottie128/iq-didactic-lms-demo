@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { User, Course, Enrollment } = require('../models');
 
 // @desc    Get all users
@@ -155,7 +156,7 @@ exports.getUserStats = async (req, res, next) => {
     const completedCourses = await Enrollment.count({
       where: {
         userId: req.user.id,
-        isCompleted: true
+        completed: true  // Changed from isCompleted to completed
       }
     });
 
@@ -164,9 +165,9 @@ exports.getUserStats = async (req, res, next) => {
       data: {
         enrolledCourses: enrollments,
         completedCourses,
-        xp: req.user.xp,
-        level: req.user.level,
-        streak: req.user.streak
+        xp: req.user.xp || 0,
+        level: req.user.level || 1,
+        streak: req.user.streak || 0
       }
     });
   } catch (error) {
