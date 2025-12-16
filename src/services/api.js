@@ -446,6 +446,14 @@ export const adminAPI = {
     return await authFetch(`${API_URL}/users?${query}`);
   },
 
+  async createUser(userData) {
+    // Admin-specific user creation - doesn't save token
+    return await authFetch(`${API_URL}/admin/users`, {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+  },
+
   async getUserAnalytics(params = {}) {
     const query = new URLSearchParams(params).toString();
     return await authFetch(`${API_URL}/admin/analytics/users?${query}`);
