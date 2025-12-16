@@ -130,12 +130,12 @@ const seedDatabase = async () => {
 
     console.log('📖 Creating lessons...');
 
-    // Create Lessons for Course 1
+    // Create Lessons for Course 1 (duration in seconds)
     await Lesson.create({
       title: 'Introduction to Web Development',
       description: 'Overview of web development and course structure',
       courseId: course1.id,
-      duration: '15 min',
+      duration: 900, // 15 minutes in seconds
       order: 1,
       videoUrl: 'https://www.youtube.com/watch?v=example1',
       content: 'Welcome to the course!'
@@ -145,10 +145,20 @@ const seedDatabase = async () => {
       title: 'HTML Basics',
       description: 'Learn HTML5 fundamentals',
       courseId: course1.id,
-      duration: '45 min',
+      duration: 2700, // 45 minutes in seconds
       order: 2,
       videoUrl: 'https://www.youtube.com/watch?v=example2',
       content: 'HTML structure and tags'
+    });
+
+    await Lesson.create({
+      title: 'CSS Fundamentals',
+      description: 'Master CSS styling and layouts',
+      courseId: course1.id,
+      duration: 3600, // 60 minutes in seconds
+      order: 3,
+      videoUrl: 'https://www.youtube.com/watch?v=example3',
+      content: 'CSS selectors, properties, and flexbox'
     });
 
     // Create Lessons for Course 2
@@ -156,10 +166,20 @@ const seedDatabase = async () => {
       title: 'Python for Data Science',
       description: 'Introduction to Python libraries',
       courseId: course2.id,
-      duration: '30 min',
+      duration: 1800, // 30 minutes in seconds
       order: 1,
-      videoUrl: 'https://www.youtube.com/watch?v=example3',
+      videoUrl: 'https://www.youtube.com/watch?v=example4',
       content: 'NumPy and Pandas overview'
+    });
+
+    await Lesson.create({
+      title: 'Data Visualization with Matplotlib',
+      description: 'Create stunning visualizations',
+      courseId: course2.id,
+      duration: 2400, // 40 minutes in seconds
+      order: 2,
+      videoUrl: 'https://www.youtube.com/watch?v=example5',
+      content: 'Charts, graphs, and plots'
     });
 
     console.log('📝 Creating quizzes...');
@@ -179,6 +199,26 @@ const seedDatabase = async () => {
           question: 'Which tag is used for the largest heading?',
           options: ['<h6>', '<h1>', '<head>'],
           correctAnswer: 1
+        }
+      ]),
+      passingScore: 70,
+      timeLimit: 10
+    });
+
+    await Quiz.create({
+      title: 'Python Basics Quiz',
+      courseId: course2.id,
+      lessonId: null,
+      questions: JSON.stringify([
+        {
+          question: 'Which library is used for data manipulation in Python?',
+          options: ['NumPy', 'Pandas', 'Both'],
+          correctAnswer: 2
+        },
+        {
+          question: 'What is the output of print(type([]))?',
+          options: ['<class \'list\'>', '<class \'dict\'>', '<class \'tuple\'>'],
+          correctAnswer: 0
         }
       ]),
       passingScore: 70,
