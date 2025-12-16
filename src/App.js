@@ -16,6 +16,7 @@ import TakeQuiz from './pages/TakeQuiz';
 import CreateQuiz from './pages/CreateQuiz';
 import AdminAnalytics from './pages/AdminAnalytics';
 import UserManagement from './pages/UserManagement';
+import TeacherStudentManagement from './pages/TeacherStudentManagement';
 import StudentProgress from './pages/StudentProgress';
 import Certificates from './pages/Certificates';
 import Achievements from './pages/Achievements';
@@ -123,6 +124,9 @@ function App() {
         {/* Admin Routes */}
         <Route path="/admin/analytics" element={user?.role === 'admin' ? <AdminAnalytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         <Route path="/admin/users" element={user?.role === 'admin' ? <UserManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        
+        {/* Teacher Routes */}
+        <Route path="/teacher/students" element={user?.role === 'teacher' ? <TeacherStudentManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
         
         {/* General Routes */}
         <Route path="/ai-teacher" element={user ? <AITeacher user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
