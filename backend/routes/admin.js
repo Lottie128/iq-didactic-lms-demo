@@ -1,10 +1,79 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const { protect, authorize } = require('../middleware/auth');
+const User = require('../models/User');
 
 // All admin routes require admin role
 router.use(protect);
 router.use(authorize('admin'));
+
+// @route   POST /api/admin/users
+// @desc    Create a new user (admin only)
+// @access  Private/Admin
+router.post('/users', async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+      role = 'student',
+      phone,
+      country,
+      city,
+      birthday,
+      occupation,
+      educationLevel
+    } = req.body;
+
+    // Check if user exists
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Create user
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      phone,
+      country,
+      city,
+      birthday,
+      occupation,
+      educationLevel
+    });
+
+    // Return user without token (admin stays logged in)
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        country: user.country,
+        city: user.city
+      }
+    });
+  } catch (error) {
+    console.error('Admin create user error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to create user'
+    });
+  }
+});
 
 // @route   GET /api/admin/stats
 // @desc    Get dashboard statistics
