@@ -19,7 +19,13 @@ const courseValidation = [
   body('title').trim().notEmpty().withMessage('Title is required'),
   body('description').trim().notEmpty().withMessage('Description is required'),
   body('category').trim().notEmpty().withMessage('Category is required'),
-  body('level').optional().isIn(['Beginner', 'Intermediate', 'Advanced'])
+  body('level').optional().custom((value) => {
+    const validLevels = ['beginner', 'intermediate', 'advanced', 'Beginner', 'Intermediate', 'Advanced'];
+    if (!validLevels.includes(value)) {
+      throw new Error('Level must be beginner, intermediate, or advanced');
+    }
+    return true;
+  })
 ];
 
 // Public routes
