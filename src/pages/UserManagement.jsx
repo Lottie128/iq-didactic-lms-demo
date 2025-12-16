@@ -1,140 +1,119 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, UserPlus, Edit, Trash2, Mail, LogOut, X, Save, MoreVertical, Shield, CheckCircle, XCircle } from 'lucide-react';
 import NotificationCenter from '../components/NotificationCenter';
 import ThemeToggler from '../components/ThemeToggler';
+import { adminAPI, authAPI } from '../services/api';
 import './UserManagement.css';
 
 const UserManagement = ({ user, onLogout }) => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAddUser, setShowAddUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: 'Sarah Chen',
-      email: 'sarah.chen@example.com',
-      role: 'student',
-      status: 'active',
-      enrolled: 5,
-      completed: 2,
-      joinDate: '2024-01-15',
-      lastActive: '2024-12-08'
-    },
-    {
-      id: 2,
-      name: 'Dr. Alex Teacher',
-      email: 'alex.teacher@example.com',
-      role: 'teacher',
-      status: 'active',
-      courses: 8,
-      students: 2130,
-      joinDate: '2023-06-10',
-      lastActive: '2024-12-09'
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike.j@example.com',
-      role: 'student',
-      status: 'active',
-      enrolled: 3,
-      completed: 1,
-      joinDate: '2024-03-22',
-      lastActive: '2024-12-07'
-    },
-    {
-      id: 4,
-      name: 'Priya Sharma',
-      email: 'priya.sharma@example.com',
-      role: 'student',
-      status: 'inactive',
-      enrolled: 2,
-      completed: 0,
-      joinDate: '2024-05-18',
-      lastActive: '2024-11-10'
-    },
-    {
-      id: 5,
-      name: 'Prof. Sarah Chen',
-      email: 'prof.chen@example.com',
-      role: 'teacher',
-      status: 'active',
-      courses: 6,
-      students: 1850,
-      joinDate: '2023-08-05',
-      lastActive: '2024-12-08'
-    },
-    {
-      id: 6,
-      name: 'Admin User',
-      email: 'admin@iqdidactic.com',
-      role: 'admin',
-      status: 'active',
-      joinDate: '2023-01-01',
-      lastActive: '2024-12-09'
-    }
-  ]);
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     role: 'student',
     password: '',
-    status: 'active'
+    phone: '',
+    country: 'Zambia',
+    city: ''
   });
 
-  const filteredUsers = users.filter(u => {
-    const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         u.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
-  const handleAddUser = (e) => {
-    e.preventDefault();
-    const newUser = {
-      id: users.length + 1,
-      ...formData,
-      enrolled: 0,
-      completed: 0,
-      courses: 0,
-      students: 0,
-      joinDate: new Date().toISOString().split('T')[0],
-      lastActive: new Date().toISOString().split('T')[0]
-    };
-    setUsers([...users, newUser]);
-    setFormData({ name: '', email: '', role: 'student', password: '', status: 'active' });
-    setShowAddUser(false);
-  };
-
-  const handleEditUser = (e) => {
-    e.preventDefault();
-    setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...formData } : u));
-    setEditingUser(null);
-    setFormData({ name: '', email: '', role: 'student', password: '', status: 'active' });
-  };
-
-  const handleDeleteUser = (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(u => u.id !== id));
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getAllUsers({ limit: 100 });
+      setUsers(response.data || []);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      setError('Failed to load users');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const startEdit = (user) => {
-    setEditingUser(user);
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         u.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      // Create user via register API
+      await authAPI.register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        phone: formData.phone || '+260 000 000 000',
+        country: formData.country,
+        city: formData.city || 'Lusaka',
+        birthday: '1990-01-01',
+        occupation: formData.role === 'teacher' ? 'Teacher' : 'Student',
+        educationLevel: 'Undergraduate'
+      });
+
+      setSuccess(`User ${formData.name} created successfully!`);
+      setFormData({ name: '', email: '', role: 'student', password: '', phone: '', country: 'Zambia', city: '' });
+      setShowAddUser(false);
+      
+      // Reload users
+      await loadUsers();
+      
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      setError(error.message || 'Failed to create user');
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
+
+    try {
+      // Note: We need to add delete user endpoint
+      setError('Delete functionality will be added soon');
+      // await adminAPI.deleteUser(userId);
+      // await loadUsers();
+      // setSuccess('User deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      setError(error.message || 'Failed to delete user');
+    }
+  };
+
+  const startEdit = (editUser) => {
+    setEditingUser(editUser);
     setFormData({
-      name: user.name,
-      email: user.email,
-      role: user.role,
+      name: editUser.name,
+      email: editUser.email,
+      role: editUser.role,
       password: '',
-      status: user.status
+      phone: editUser.phone || '',
+      country: editUser.country || 'Zambia',
+      city: editUser.city || ''
     });
     setShowAddUser(false);
   };
@@ -145,28 +124,27 @@ const UserManagement = ({ user, onLogout }) => {
     );
   };
 
-  const bulkDelete = () => {
-    if (window.confirm(`Delete ${selectedUsers.length} selected users?`)) {
-      setUsers(users.filter(u => !selectedUsers.includes(u.id)));
-      setSelectedUsers([]);
-    }
-  };
-
-  const bulkActivate = () => {
-    setUsers(users.map(u => selectedUsers.includes(u.id) ? { ...u, status: 'active' } : u));
-    setSelectedUsers([]);
-  };
-
-  const bulkDeactivate = () => {
-    setUsers(users.map(u => selectedUsers.includes(u.id) ? { ...u, status: 'inactive' } : u));
-    setSelectedUsers([]);
-  };
-
   const roleConfig = {
     student: { color: '#60a5fa', icon: '🎓' },
     teacher: { color: '#a78bfa', icon: '👨‍🏫' },
     admin: { color: '#f59e0b', icon: '⚡' }
   };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  };
+
+  if (loading) {
+    return (
+      <div className="user-mgmt-root">
+        <div className="dashboard-bg" />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <div className="loader">Loading users...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="user-mgmt-root">
@@ -196,6 +174,18 @@ const UserManagement = ({ user, onLogout }) => {
       </header>
 
       <main className="user-mgmt-main fade-in">
+        {error && (
+          <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px' }}>
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px' }}>
+            {success}
+          </div>
+        )}
+
         <div className="controls-bar glass">
           <div className="search-box">
             <Search size={18} />
@@ -213,48 +203,23 @@ const UserManagement = ({ user, onLogout }) => {
               <option value="teacher">Teachers</option>
               <option value="admin">Admins</option>
             </select>
-            <select className="filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
           </div>
-          <button className="btn btn-primary" onClick={() => { setShowAddUser(true); setEditingUser(null); }}>
+          <button className="btn btn-primary" onClick={() => { setShowAddUser(true); setEditingUser(null); setError(''); }}>
             <UserPlus size={16} />
             Add User
           </button>
         </div>
-
-        {selectedUsers.length > 0 && (
-          <div className="bulk-actions glass">
-            <span>{selectedUsers.length} selected</span>
-            <div className="bulk-btns">
-              <button className="btn btn-secondary" onClick={bulkActivate}>
-                <CheckCircle size={14} />
-                Activate
-              </button>
-              <button className="btn btn-secondary" onClick={bulkDeactivate}>
-                <XCircle size={14} />
-                Deactivate
-              </button>
-              <button className="btn btn-danger" onClick={bulkDelete}>
-                <Trash2 size={14} />
-                Delete
-              </button>
-            </div>
-          </div>
-        )}
 
         {(showAddUser || editingUser) && (
           <div className="user-form-overlay">
             <div className="user-form glass-strong">
               <div className="form-header">
                 <h3>{editingUser ? 'Edit User' : 'Add New User'}</h3>
-                <button className="btn-icon" onClick={() => { setShowAddUser(false); setEditingUser(null); }}>
+                <button className="btn-icon" onClick={() => { setShowAddUser(false); setEditingUser(null); setError(''); }}>
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={editingUser ? handleEditUser : handleAddUser}>
+              <form onSubmit={handleAddUser}>
                 <div className="form-field">
                   <label>Full Name *</label>
                   <input
@@ -278,6 +243,26 @@ const UserManagement = ({ user, onLogout }) => {
                   />
                 </div>
                 <div className="form-field">
+                  <label>Phone</label>
+                  <input
+                    className="input"
+                    type="tel"
+                    placeholder="+260 97 123 4567"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>City</label>
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="Lusaka"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  />
+                </div>
+                <div className="form-field">
                   <label>Role *</label>
                   <select
                     className="input"
@@ -290,7 +275,7 @@ const UserManagement = ({ user, onLogout }) => {
                   </select>
                 </div>
                 <div className="form-field">
-                  <label>Password {editingUser && '(leave blank to keep current)'}</label>
+                  <label>Password *</label>
                   <input
                     className="input"
                     type="password"
@@ -298,21 +283,12 @@ const UserManagement = ({ user, onLogout }) => {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required={!editingUser}
+                    minLength={8}
                   />
-                </div>
-                <div className="form-field">
-                  <label>Status *</label>
-                  <select
-                    className="input"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                  <small>Minimum 8 characters</small>
                 </div>
                 <div className="form-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => { setShowAddUser(false); setEditingUser(null); }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => { setShowAddUser(false); setEditingUser(null); setError(''); }}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
@@ -329,19 +305,12 @@ const UserManagement = ({ user, onLogout }) => {
           <table>
             <thead>
               <tr>
-                <th width="40">
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                    onChange={(e) => setSelectedUsers(e.target.checked ? filteredUsers.map(u => u.id) : [])}
-                  />
-                </th>
                 <th>User</th>
                 <th>Role</th>
-                <th>Status</th>
-                <th>Stats</th>
+                <th>Phone</th>
+                <th>Location</th>
                 <th>Joined</th>
-                <th>Last Active</th>
+                <th>Last Login</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -349,15 +318,8 @@ const UserManagement = ({ user, onLogout }) => {
               {filteredUsers.map(u => (
                 <tr key={u.id}>
                   <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.includes(u.id)}
-                      onChange={() => toggleUserSelection(u.id)}
-                    />
-                  </td>
-                  <td>
                     <div className="user-cell">
-                      <div className="user-avatar-small">{u.name.charAt(0)}</div>
+                      <div className="user-avatar-small">{u.name?.charAt(0) || 'U'}</div>
                       <div>
                         <p className="user-name">{u.name}</p>
                         <p className="user-email">{u.email}</p>
@@ -365,27 +327,14 @@ const UserManagement = ({ user, onLogout }) => {
                     </div>
                   </td>
                   <td>
-                    <span className="role-badge" style={{ background: `${roleConfig[u.role].color}20`, color: roleConfig[u.role].color }}>
-                      {roleConfig[u.role].icon} {u.role}
+                    <span className="role-badge" style={{ background: `${roleConfig[u.role]?.color || '#666'}20`, color: roleConfig[u.role]?.color || '#666' }}>
+                      {roleConfig[u.role]?.icon || '👤'} {u.role}
                     </span>
                   </td>
-                  <td>
-                    <span className={`status-badge ${u.status}`}>
-                      {u.status === 'active' ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                      {u.status}
-                    </span>
-                  </td>
-                  <td>
-                    {u.role === 'student' && (
-                      <span className="stats-text">{u.enrolled} enrolled • {u.completed} completed</span>
-                    )}
-                    {u.role === 'teacher' && (
-                      <span className="stats-text">{u.courses} courses • {u.students} students</span>
-                    )}
-                    {u.role === 'admin' && <span className="stats-text">—</span>}
-                  </td>
-                  <td>{u.joinDate}</td>
-                  <td>{u.lastActive}</td>
+                  <td>{u.phone || 'N/A'}</td>
+                  <td>{u.city ? `${u.city}, ${u.country}` : u.country || 'N/A'}</td>
+                  <td>{formatDate(u.createdAt)}</td>
+                  <td>{formatDate(u.lastLogin) || 'Never'}</td>
                   <td>
                     <div className="action-btns">
                       <button className="btn-icon-small" onClick={() => startEdit(u)} title="Edit">
@@ -403,6 +352,12 @@ const UserManagement = ({ user, onLogout }) => {
               ))}
             </tbody>
           </table>
+
+          {filteredUsers.length === 0 && (
+            <div style={{ padding: '40px', textAlign: 'center', opacity: 0.6 }}>
+              <p>No users found</p>
+            </div>
+          )}
         </div>
       </main>
     </div>
