@@ -38,11 +38,15 @@ function App() {
       
       if (token && savedUser) {
         try {
-          // Verify token is still valid
-          const response = await authAPI.getMe();
-          setUser(response.data);
+          // Parse saved user data
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          
+          // Optionally verify token is still valid
+          // const response = await authAPI.getMe();
+          // setUser(response.data);
         } catch (error) {
-          console.error('Session expired:', error);
+          console.error('Session error:', error);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
@@ -63,6 +67,9 @@ function App() {
 
   const handleLogin = async (userData) => {
     console.log('Login data:', userData);
+    
+    // User data and token are already saved in localStorage by authAPI.login()
+    // Just update the state
     setUser(userData);
   };
 
@@ -71,6 +78,9 @@ function App() {
       await authAPI.logout();
     } catch (error) {
       console.error('Logout error:', error);
+      // Still clear local data even if API call fails
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
     setUser(null);
   };
