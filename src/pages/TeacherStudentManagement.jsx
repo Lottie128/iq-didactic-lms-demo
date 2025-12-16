@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, UserPlus, Eye, Trash2, Mail, LogOut, Users, BookOpen, BarChart3, Award } from 'lucide-react';
 import NotificationCenter from '../components/NotificationCenter';
 import ThemeToggler from '../components/ThemeToggler';
-import { courseAPI, adminAPI } from '../services/api';
+import { courseAPI, userAPI } from '../services/api';
 import './UserManagement.css';
 
 const TeacherStudentManagement = ({ user, onLogout }) => {
@@ -29,8 +29,8 @@ const TeacherStudentManagement = ({ user, onLogout }) => {
       const teacherCourses = coursesResponse.data || [];
       setCourses(teacherCourses);
 
-      // Fetch all students (in production, filter by enrolled in teacher's courses)
-      const studentsResponse = await adminAPI.getAllUsers({ role: 'student', limit: 100 });
+      // Fetch all students (teachers have permission)
+      const studentsResponse = await userAPI.getAllUsers({ role: 'student', limit: 100 });
       const allStudents = studentsResponse.data || [];
       
       setStudents(allStudents);
