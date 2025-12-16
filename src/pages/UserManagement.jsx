@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, UserPlus, Edit, Trash2, Mail, LogOut, X, Save, MoreVertical, Shield, CheckCircle, XCircle } from 'lucide-react';
 import NotificationCenter from '../components/NotificationCenter';
 import ThemeToggler from '../components/ThemeToggler';
-import { adminAPI, authAPI } from '../services/api';
+import { adminAPI } from '../services/api';
 import './UserManagement.css';
 
 const UserManagement = ({ user, onLogout }) => {
@@ -59,8 +59,8 @@ const UserManagement = ({ user, onLogout }) => {
     setSuccess('');
 
     try {
-      // Create user via register API
-      await authAPI.register({
+      // Use admin-specific createUser endpoint (doesn't save token)
+      await adminAPI.createUser({
         name: formData.name,
         email: formData.email,
         password: formData.password,
