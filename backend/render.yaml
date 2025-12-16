@@ -20,7 +20,7 @@ services:
       - key: JWT_EXPIRE
         value: 7d
       - key: FRONTEND_URL
-        value: https://iq-didactic.vercel.app
+        value: https:iq-didactic-lms-demo-git-main-lottie128s-projects.vercel.app
 
 databases:
   - name: iq-didactic-db
