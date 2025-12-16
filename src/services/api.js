@@ -47,7 +47,7 @@ export const authAPI = {
     return response;
   },
 
-  async login(email, password, role) {
+  async login(email, password) {
     const response = await authFetch(`${API_URL}/auth/login`, {
       method: 'POST',
       body: JSON.stringify({ email, password })
@@ -120,6 +120,11 @@ export const courseAPI = {
   async getAllCourses(params = {}) {
     const query = new URLSearchParams(params).toString();
     return await authFetch(`${API_URL}/courses?${query}`);
+  },
+
+  // Alias for consistency
+  async getCourses(params = {}) {
+    return this.getAllCourses(params);
   },
 
   async getCourseById(id) {
@@ -434,6 +439,11 @@ export const notificationAPI = {
 export const adminAPI = {
   async getDashboardStats() {
     return await authFetch(`${API_URL}/admin/stats`);
+  },
+
+  async getAllUsers(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await authFetch(`${API_URL}/users?${query}`);
   },
 
   async getUserAnalytics(params = {}) {
