@@ -21,7 +21,8 @@ const profileValidation = [
 ];
 
 // Protected routes
-router.get('/', protect, authorize('admin'), getAllUsers);
+// Allow both admin and teacher to view users
+router.get('/', protect, authorize('admin', 'teacher'), getAllUsers);
 router.get('/stats', protect, getUserStats);
 router.get('/:id', protect, getUserById);
 router.put('/profile', protect, profileValidation, validate, updateProfile);
