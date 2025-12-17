@@ -1,16 +1,39 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+// Groq API Configuration (much faster and more reliable than Gemini)
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const MODEL_NAME = 'llama-3.3-70b-versatile';
 
-// Initialize Gemini with updated SDK (v0.24.1)
-// Using gemini-2.0-flash-exp model (latest as of Dec 2024)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+/**
+ * Helper function to call Groq API
+ */
+const callGroqAPI = async (messages, temperature = 0.7) => {
+  try {
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: MODEL_NAME,
+        messages: messages,
+        temperature: temperature,
+        max_tokens: 8192,
+        top_p: 0.95
+      })
+    });
 
-// Model configuration
-const MODEL_NAME = 'gemini-2.0-flash-exp';
-const GENERATION_CONFIG = {
-  temperature: 0.7,
-  topP: 0.95,
-  topK: 40,
-  maxOutputTokens: 8192,
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Groq API request failed');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Groq API Error:', error);
+    throw new Error(`Failed to get AI response: ${error.message}`);
+  }
 };
 
 /**
@@ -18,10 +41,7 @@ const GENERATION_CONFIG = {
  */
 const generateCourseRecommendations = async (userProfile, enrolledCourses) => {
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    
-    const prompt = `
-You are an expert educational advisor. Based on the following user profile and their enrolled courses, recommend 5 relevant courses they should take next.
+    const prompt = `You are an expert educational advisor. Based on the following user profile and their enrolled courses, recommend 5 relevant courses they should take next.
 
 User Profile:
 - Current Level: ${userProfile.level || 1}
@@ -44,12 +64,14 @@ Provide recommendations in JSON format:
       "skills": ["skill1", "skill2"]
     }
   ]
-}
-`;
+}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const messages = [
+      { role: 'system', content: 'You are an expert educational advisor. Always respond with valid JSON.' },
+      { role: 'user', content: prompt }
+    ];
+
+    const text = await callGroqAPI(messages);
     
     // Extract JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -69,10 +91,7 @@ Provide recommendations in JSON format:
  */
 const generateLearningPath = async (userId, targetSkills, currentProgress) => {
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    
-    const prompt = `
-Create a personalized learning path for a student who wants to learn: ${targetSkills.join(', ')}.
+    const prompt = `Create a personalized learning path for a student who wants to learn: ${targetSkills.join(', ')}.
 
 Current Progress:
 - Completed Courses: ${currentProgress.completedCourses || 0}
@@ -100,12 +119,14 @@ Provide a step-by-step learning path in JSON format:
       }
     ]
   }
-}
-`;
+}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const messages = [
+      { role: 'system', content: 'You are an expert learning path designer. Always respond with valid JSON.' },
+      { role: 'user', content: prompt }
+    ];
+
+    const text = await callGroqAPI(messages);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -123,10 +144,7 @@ Provide a step-by-step learning path in JSON format:
  */
 const generateQuizQuestions = async (lessonTitle, lessonContent, difficulty = 'intermediate') => {
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    
-    const prompt = `
-Generate 5 multiple-choice quiz questions for the following lesson:
+    const prompt = `Generate 5 multiple-choice quiz questions for the following lesson:
 
 Lesson Title: ${lessonTitle}
 Difficulty: ${difficulty}
@@ -145,12 +163,14 @@ Provide questions in JSON format:
       "difficulty": "easy/medium/hard"
     }
   ]
-}
-`;
+}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const messages = [
+      { role: 'system', content: 'You are an expert quiz creator. Always respond with valid JSON containing exactly 5 questions.' },
+      { role: 'user', content: prompt }
+    ];
+
+    const text = await callGroqAPI(messages);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -168,10 +188,7 @@ Provide questions in JSON format:
  */
 const generateStudyTips = async (userPerformance, weakAreas) => {
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    
-    const prompt = `
-Provide personalized study tips for a student with the following performance:
+    const prompt = `Provide personalized study tips for a student with the following performance:
 
 Overall Performance: ${userPerformance.averageScore || 0}%
 Streak: ${userPerformance.streak || 0} days
@@ -188,12 +205,14 @@ Provide actionable tips in JSON format:
   ],
   "focusAreas": ["Area 1", "Area 2"],
   "motivationalMessage": "Encouraging message"
-}
-`;
+}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const messages = [
+      { role: 'system', content: 'You are a supportive study coach. Always respond with valid JSON.' },
+      { role: 'user', content: prompt }
+    ];
+
+    const text = await callGroqAPI(messages);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -211,10 +230,7 @@ Provide actionable tips in JSON format:
  */
 const analyzeCodeSubmission = async (code, language, expectedOutput) => {
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    
-    const prompt = `
-Analyze the following ${language} code submission:
+    const prompt = `Analyze the following ${language} code submission:
 
 \`\`\`${language}
 ${code}
@@ -234,12 +250,14 @@ Provide analysis in JSON format:
     "efficiency": 0-10,
     "bestPractices": 0-10
   }
-}
-`;
+}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const messages = [
+      { role: 'system', content: 'You are an expert code reviewer. Always respond with valid JSON.' },
+      { role: 'user', content: prompt }
+    ];
+
+    const text = await callGroqAPI(messages);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -257,27 +275,22 @@ Provide analysis in JSON format:
  */
 const chatWithTutor = async (message, context = {}) => {
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    
-    const prompt = `
-You are an expert AI tutor for the IQ Didactic LMS platform. Answer the student's question helpfully and accurately.
+    const systemPrompt = `You are an expert AI tutor for the IQ Didactic LMS platform. You are helpful, knowledgeable, and encouraging. Answer questions clearly and educationally.
 
 Context:
 - Current Course: ${context.courseName || 'General'}
 - Student Level: ${context.studentLevel || 1}
-- Topic: ${context.topic || 'General Education'}
+- Topic: ${context.topic || 'General Education'}`;
 
-Student Question:
-${message}
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: message }
+    ];
 
-Provide a clear, educational response that helps the student learn.
-`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = await callGroqAPI(messages);
 
     return {
-      response: response.text(),
+      response: response,
       timestamp: new Date().toISOString()
     };
   } catch (error) {
@@ -291,10 +304,7 @@ Provide a clear, educational response that helps the student learn.
  */
 const generateCourseOutline = async (topic, level, duration) => {
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-    
-    const prompt = `
-Create a comprehensive course outline for:
+    const prompt = `Create a comprehensive course outline for:
 
 Topic: ${topic}
 Level: ${level}
@@ -321,12 +331,14 @@ Provide the outline in JSON format:
       ]
     }
   ]
-}
-`;
+}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const messages = [
+      { role: 'system', content: 'You are an expert curriculum designer. Always respond with valid JSON.' },
+      { role: 'user', content: prompt }
+    ];
+
+    const text = await callGroqAPI(messages);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
