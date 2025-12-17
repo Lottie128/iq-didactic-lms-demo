@@ -23,16 +23,16 @@ import Achievements from './pages/Achievements';
 import DiscussionForum from './pages/DiscussionForum';
 import Wishlist from './pages/Wishlist';
 import Schedule from './pages/Schedule';
+import ErrorBoundary from './components/ErrorBoundary';
 import { authAPI } from './services/api';
 import './App.css';
 
 function App() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
+    // Check for existing session and verify token
     const initializeAuth = async () => {
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
@@ -41,29 +41,35 @@ function App() {
         try {
           // Parse saved user data
           const parsedUser = JSON.parse(savedUser);
-          setUser(parsedUser);
           
-          // Optionally verify token is still valid
-          // const response = await authAPI.getMe();
-          // setUser(response.data);
+          // Verify token is still valid by calling the API
+          try {
+            const response = await authAPI.getMe();
+            // Update user data with fresh data from server
+            const freshUser = response.data;
+            setUser(freshUser);
+            localStorage.setItem('user', JSON.stringify(freshUser));
+          } catch (error) {
+            console.error('Token verification failed:', error);
+            // Token is invalid or expired - clear auth
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser(null);
+          }
         } catch (error) {
-          console.error('Session error:', error);
+          console.error('Session initialization error:', error);
+          // Clear corrupted data
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          setUser(null);
         }
       }
       
-      setInitializing(false);
+      // Loading complete
+      setLoading(false);
     };
 
     initializeAuth();
-
-    // Show loader for 3 seconds
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
   }, []);
 
   const handleLogin = async (userData) => {
@@ -80,59 +86,62 @@ function App() {
     } catch (error) {
       console.error('Logout error:', error);
       // Still clear local data even if API call fails
+    } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      setUser(null);
     }
-    setUser(null);
   };
 
-  if (loading || initializing) {
+  if (loading) {
     return <Loader />;
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={user ? <Navigate to={`/${user.role}`} replace /> : <LandingPage />} />
-        <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <Login onLogin={handleLogin} />} />
-        <Route path="/signup" element={user ? <Navigate to={`/${user.role}`} replace /> : <Signup onSignup={handleLogin} />} />
-        
-        {/* Dashboard Routes */}
-        <Route path="/student" element={user?.role === 'student' ? <StudentDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/teacher" element={user?.role === 'teacher' ? <TeacherDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/admin" element={user?.role === 'admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        
-        {/* Course Routes */}
-        <Route path="/course/:id" element={user ? <CourseView user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/create-course" element={user ? <CreateCourse user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/edit-course/:id" element={user ? <EditCourse user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        
-        {/* Quiz Routes */}
-        <Route path="/quiz/:id" element={user ? <TakeQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/create-quiz" element={user ? <CreateQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        
-        {/* Student Features */}
-        <Route path="/progress" element={user ? <StudentProgress user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/certificates" element={user ? <Certificates user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/achievements" element={user ? <Achievements user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/wishlist" element={user ? <Wishlist user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/schedule" element={user ? <Schedule user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        
-        {/* Discussion Routes */}
-        <Route path="/course/:id/discussions" element={user ? <DiscussionForum user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        
-        {/* Admin Routes */}
-        <Route path="/admin/analytics" element={user?.role === 'admin' ? <AdminAnalytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/admin/users" element={user?.role === 'admin' ? <UserManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        
-        {/* Teacher Routes */}
-        <Route path="/teacher/students" element={user?.role === 'teacher' ? <TeacherStudentManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        
-        {/* General Routes */}
-        <Route path="/ai-teacher" element={user ? <AITeacher user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-        <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
-      </Routes>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          <Route path="/" element={user ? <Navigate to={`/${user.role}`} replace /> : <LandingPage />} />
+          <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <Login onLogin={handleLogin} />} />
+          <Route path="/signup" element={user ? <Navigate to={`/${user.role}`} replace /> : <Signup onSignup={handleLogin} />} />
+          
+          {/* Dashboard Routes */}
+          <Route path="/student" element={user?.role === 'student' ? <StudentDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/teacher" element={user?.role === 'teacher' ? <TeacherDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/admin" element={user?.role === 'admin' ? <AdminDashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          
+          {/* Course Routes */}
+          <Route path="/course/:id" element={user ? <CourseView user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/create-course" element={user ? <CreateCourse user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/edit-course/:id" element={user ? <EditCourse user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          
+          {/* Quiz Routes */}
+          <Route path="/quiz/:id" element={user ? <TakeQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/create-quiz" element={user ? <CreateQuiz user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          
+          {/* Student Features */}
+          <Route path="/progress" element={user ? <StudentProgress user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/certificates" element={user ? <Certificates user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/achievements" element={user ? <Achievements user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/wishlist" element={user ? <Wishlist user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/schedule" element={user ? <Schedule user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          
+          {/* Discussion Routes */}
+          <Route path="/course/:id/discussions" element={user ? <DiscussionForum user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/analytics" element={user?.role === 'admin' ? <AdminAnalytics user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/admin/users" element={user?.role === 'admin' ? <UserManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          
+          {/* Teacher Routes */}
+          <Route path="/teacher/students" element={user?.role === 'teacher' ? <TeacherStudentManagement user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          
+          {/* General Routes */}
+          <Route path="/ai-teacher" element={user ? <AITeacher user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+          <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

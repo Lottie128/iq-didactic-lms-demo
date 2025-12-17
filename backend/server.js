@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
 
@@ -19,10 +19,11 @@ const certificateRoutes = require('./routes/certificates');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 const errorHandler = require('./middleware/errorHandler');
+const { createRateLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
-// CORS configuration - allow multiple origins
+// CORS configuration - allow multiple origins (strict mode)
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
@@ -34,26 +35,56 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    // In development, allow requests with no origin (like Postman, curl)
+    // In production, require origin
+    if (!origin && process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    if (!origin) {
+      return callback(new Error('Origin header is required'), false);
+    }
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error('Not allowed by CORS'), false);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400 // 24 hours
 };
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting
+app.use('/api/auth', createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per windowMs
+  message: 'Too many authentication attempts. Please try again later.'
+}));
+
+app.use('/api/', createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per windowMs
+  message: 'Too many requests. Please try again later.'
+}));
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -61,13 +92,29 @@ app.get('/', (req, res) => {
     success: true,
     message: 'IQ Didactic API Server',
     version: '1.0.0',
-    environment: process.env.NODE_ENV,
+    environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString()
   });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', uptime: process.uptime() });
+app.get('/health', async (req, res) => {
+  try {
+    // Check database connection
+    await sequelize.authenticate();
+    
+    res.json({ 
+      status: 'healthy', 
+      uptime: process.uptime(),
+      database: 'connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'unhealthy', 
+      database: 'disconnected',
+      error: error.message 
+    });
+  }
 });
 
 // API Routes
@@ -91,7 +138,8 @@ app.use(errorHandler);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'Route not found',
+    path: req.originalUrl
   });
 });
 
@@ -106,13 +154,23 @@ const runMigrations = async () => {
     const migrationsDir = path.join(__dirname, 'migrations');
     
     // Check if migrations directory exists
-    if (!fs.existsSync(migrationsDir)) {
+    try {
+      await fs.access(migrationsDir);
+    } catch (error) {
       console.log('ℹ️  No migrations directory found, skipping migrations');
-      return;
+      return true;
     }
 
-    const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.js')).sort();
+    const files = (await fs.readdir(migrationsDir))
+      .filter(f => f.endsWith('.js'))
+      .sort();
+    
     console.log(`Found ${files.length} migration files`);
+
+    if (files.length === 0) {
+      console.log('ℹ️  No migration files found');
+      return true;
+    }
 
     // Run each migration
     for (const file of files) {
@@ -123,51 +181,93 @@ const runMigrations = async () => {
         await migration.up(sequelize.getQueryInterface(), sequelize.Sequelize);
         console.log(`✅ Migration completed: ${file}`);
       } catch (error) {
+        // Only skip if column/table already exists
         if (error.message.includes('already exists') || 
             error.message.includes('duplicate') ||
             error.message.includes('does not exist')) {
-          console.log(`⏭️  Migration already applied or column exists: ${file}`);
+          console.log(`⏭️  Migration already applied: ${file}`);
         } else {
-          throw error;
+          console.error(`❌ Migration failed: ${file}`);
+          throw error; // Re-throw to stop server startup
         }
       }
     }
 
     console.log('✨ All migrations completed successfully!');
+    return true;
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
-    // Don't exit - let the server start anyway
+    console.error('❌ Critical migration error:', error.message);
+    console.error('Stack trace:', error.stack);
+    return false;
   }
 };
 
 // Initialize server
 const startServer = async () => {
   try {
+    console.log('🚀 Starting IQ Didactic API Server...');
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    
     // Test database connection
     const dbConnected = await testConnection();
     if (!dbConnected) {
-      console.error('Failed to connect to database. Exiting...');
+      console.error('❌ Failed to connect to database. Exiting...');
       process.exit(1);
     }
 
     // Run migrations BEFORE syncing database
-    await runMigrations();
+    const migrationsSuccess = await runMigrations();
+    if (!migrationsSuccess) {
+      console.error('❌ Migrations failed. Server cannot start with incomplete schema.');
+      process.exit(1);
+    }
 
     // Sync database
-    await syncDatabase();
+    const syncSuccess = await syncDatabase();
+    if (!syncSuccess) {
+      console.error('❌ Database sync failed. Exiting...');
+      process.exit(1);
+    }
 
     // Start server
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+      console.log('\n' + '='.repeat(60));
+      console.log('🚀 Server running on port', PORT);
+      console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🌐 API URL: http://localhost:${PORT}`);
-      console.log(`✅ CORS enabled for:`, allowedOrigins.join(', '));
+      console.log(`✅ CORS enabled for: ${allowedOrigins.filter(Boolean).join(', ')}`);
+      console.log('='.repeat(60) + '\n');
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error.message);
+    console.error('Stack trace:', error.stack);
     process.exit(1);
   }
 };
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('💥 UNCAUGHT EXCEPTION! Shutting down...');
+  console.error(error.name, error.message);
+  console.error(error.stack);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (error) => {
+  console.error('💥 UNHANDLED REJECTION! Shutting down...');
+  console.error(error);
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('👋 SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('💤 Process terminated');
+    sequelize.close();
+  });
+});
 
 startServer();
 
