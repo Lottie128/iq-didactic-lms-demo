@@ -1,9 +1,7 @@
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize Gemini 2.0 Flash
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
-});
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Model configuration
 const MODEL_NAME = 'gemini-2.0-flash-exp';
@@ -19,6 +17,8 @@ const GENERATION_CONFIG = {
  */
 const generateCourseRecommendations = async (userProfile, enrolledCourses) => {
   try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    
     const prompt = `
 You are an expert educational advisor. Based on the following user profile and their enrolled courses, recommend 5 relevant courses they should take next.
 
@@ -46,13 +46,9 @@ Provide recommendations in JSON format:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      generationConfig: GENERATION_CONFIG
-    });
-
-    const text = response.text;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     
     // Extract JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -72,6 +68,8 @@ Provide recommendations in JSON format:
  */
 const generateLearningPath = async (userId, targetSkills, currentProgress) => {
   try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    
     const prompt = `
 Create a personalized learning path for a student who wants to learn: ${targetSkills.join(', ')}.
 
@@ -104,13 +102,9 @@ Provide a step-by-step learning path in JSON format:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      generationConfig: GENERATION_CONFIG
-    });
-
-    const text = response.text;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -128,6 +122,8 @@ Provide a step-by-step learning path in JSON format:
  */
 const generateQuizQuestions = async (lessonTitle, lessonContent, difficulty = 'intermediate') => {
   try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    
     const prompt = `
 Generate 5 multiple-choice quiz questions for the following lesson:
 
@@ -151,13 +147,9 @@ Provide questions in JSON format:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      generationConfig: GENERATION_CONFIG
-    });
-
-    const text = response.text;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -175,6 +167,8 @@ Provide questions in JSON format:
  */
 const generateStudyTips = async (userPerformance, weakAreas) => {
   try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    
     const prompt = `
 Provide personalized study tips for a student with the following performance:
 
@@ -196,13 +190,9 @@ Provide actionable tips in JSON format:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      generationConfig: GENERATION_CONFIG
-    });
-
-    const text = response.text;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -216,10 +206,12 @@ Provide actionable tips in JSON format:
 };
 
 /**
- * Analyze code submissions (for programming courses)
+ * Analyze code submissions
  */
 const analyzeCodeSubmission = async (code, language, expectedOutput) => {
   try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    
     const prompt = `
 Analyze the following ${language} code submission:
 
@@ -244,13 +236,9 @@ Provide analysis in JSON format:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      generationConfig: GENERATION_CONFIG
-    });
-
-    const text = response.text;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -268,6 +256,8 @@ Provide analysis in JSON format:
  */
 const chatWithTutor = async (message, context = {}) => {
   try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    
     const prompt = `
 You are an expert AI tutor for the IQ Didactic LMS platform. Answer the student's question helpfully and accurately.
 
@@ -282,17 +272,11 @@ ${message}
 Provide a clear, educational response that helps the student learn.
 `;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      generationConfig: {
-        ...GENERATION_CONFIG,
-        temperature: 0.8 // More creative for chat
-      }
-    });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
 
     return {
-      response: response.text,
+      response: response.text(),
       timestamp: new Date().toISOString()
     };
   } catch (error) {
@@ -306,6 +290,8 @@ Provide a clear, educational response that helps the student learn.
  */
 const generateCourseOutline = async (topic, level, duration) => {
   try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    
     const prompt = `
 Create a comprehensive course outline for:
 
@@ -337,13 +323,9 @@ Provide the outline in JSON format:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      generationConfig: GENERATION_CONFIG
-    });
-
-    const text = response.text;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
