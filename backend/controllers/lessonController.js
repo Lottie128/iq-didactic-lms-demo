@@ -1,4 +1,5 @@
 const { Lesson, Course, Progress } = require('../models');
+const { detectVideoPlatform, isValidVideoUrl } = require('../utils/videoHelper');
 
 // @desc    Get all lessons for a course
 // @route   GET /api/lessons/course/:courseId
@@ -8,9 +9,9 @@ exports.getAllLessons = async (req, res, next) => {
     const { courseId } = req.params;
 
     const lessons = await Lesson.findAll({
-      where: { courseId },
+      where: { courseId: String(courseId) },
       order: [['order', 'ASC'], ['createdAt', 'ASC']],
-      attributes: ['id', 'title', 'description', 'type', 'videoUrl', 'duration', 'order', 'published', 'resources']
+      attributes: ['id', 'title', 'description', 'content', 'type', 'videoUrl', 'videoPlatform', 'duration', 'order', 'published', 'thumbnail', 'resources']
     });
 
     res.status(200).json({
@@ -72,10 +73,13 @@ exports.getLessonById = async (req, res, next) => {
 // @access  Private (Teacher, Admin)
 exports.createLesson = async (req, res, next) => {
   try {
-    const { courseId, title, description, type, videoUrl, duration, order, published, resources } = req.body;
+    const { courseId, title, description, content, type, videoUrl, duration, order, published, thumbnail, resources } = req.body;
+
+    // Convert courseId to string if it's a number
+    const courseIdStr = String(courseId);
 
     // Check if course exists and user owns it (or is admin)
-    const course = await Course.findByPk(courseId);
+    const course = await Course.findByPk(courseIdStr);
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -91,25 +95,45 @@ exports.createLesson = async (req, res, next) => {
       });
     }
 
+    // Detect video platform if videoUrl is provided
+    let videoPlatform = null;
+    let embedUrl = videoUrl;
+    
+    if (type === 'video' && videoUrl) {
+      if (!isValidVideoUrl(videoUrl)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid video URL format'
+        });
+      }
+
+      const detection = detectVideoPlatform(videoUrl);
+      videoPlatform = detection.platform;
+      embedUrl = detection.embedUrl || videoUrl;
+    }
+
     // If order not provided, set it to the next available order
     let lessonOrder = order;
-    if (!lessonOrder) {
+    if (!lessonOrder && lessonOrder !== 0) {
       const lastLesson = await Lesson.findOne({
-        where: { courseId },
+        where: { courseId: courseIdStr },
         order: [['order', 'DESC']]
       });
       lessonOrder = lastLesson ? lastLesson.order + 1 : 0;
     }
 
     const lesson = await Lesson.create({
-      courseId,
+      courseId: courseIdStr,
       title,
-      description,
+      description: description || '',
+      content: content || '',
       type: type || 'video',
-      videoUrl,
-      duration,
+      videoUrl: embedUrl,
+      videoPlatform,
+      duration: parseInt(duration) || 0,
       order: lessonOrder,
       published: published !== undefined ? published : true,
+      thumbnail: thumbnail || null,
       resources: resources || []
     });
 
@@ -148,17 +172,36 @@ exports.updateLesson = async (req, res, next) => {
       });
     }
 
-    const { title, description, type, videoUrl, duration, order, published, resources } = req.body;
+    const { title, description, content, type, videoUrl, duration, order, published, thumbnail, resources } = req.body;
 
     // Update fields
     if (title !== undefined) lesson.title = title;
     if (description !== undefined) lesson.description = description;
+    if (content !== undefined) lesson.content = content;
     if (type !== undefined) lesson.type = type;
-    if (videoUrl !== undefined) lesson.videoUrl = videoUrl;
-    if (duration !== undefined) lesson.duration = duration;
+    if (duration !== undefined) lesson.duration = parseInt(duration) || 0;
     if (order !== undefined) lesson.order = order;
     if (published !== undefined) lesson.published = published;
+    if (thumbnail !== undefined) lesson.thumbnail = thumbnail;
     if (resources !== undefined) lesson.resources = resources;
+
+    // Handle video URL update with platform detection
+    if (videoUrl !== undefined) {
+      if (type === 'video' && videoUrl) {
+        if (!isValidVideoUrl(videoUrl)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid video URL format'
+          });
+        }
+
+        const detection = detectVideoPlatform(videoUrl);
+        lesson.videoPlatform = detection.platform;
+        lesson.videoUrl = detection.embedUrl || videoUrl;
+      } else {
+        lesson.videoUrl = videoUrl;
+      }
+    }
 
     await lesson.save();
 
@@ -223,8 +266,10 @@ exports.reorderLessons = async (req, res, next) => {
       });
     }
 
+    const courseIdStr = String(courseId);
+
     // Check if course exists and user owns it
-    const course = await Course.findByPk(courseId);
+    const course = await Course.findByPk(courseIdStr);
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -243,7 +288,7 @@ exports.reorderLessons = async (req, res, next) => {
     const updatePromises = lessonOrders.map(({ id, order }) => {
       return Lesson.update(
         { order },
-        { where: { id, courseId } }
+        { where: { id, courseId: courseIdStr } }
       );
     });
 
@@ -251,7 +296,7 @@ exports.reorderLessons = async (req, res, next) => {
 
     // Get updated lessons
     const updatedLessons = await Lesson.findAll({
-      where: { courseId },
+      where: { courseId: courseIdStr },
       order: [['order', 'ASC']]
     });
 
