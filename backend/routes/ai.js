@@ -5,7 +5,9 @@ const {
   generateQuiz,
   generateContent,
   generateOutline,
-  chat
+  chat,
+  getRecommendations,
+  getStudyTips
 } = require('../controllers/aiController');
 
 // All routes require authentication
@@ -22,5 +24,11 @@ router.post('/generate-outline', authorize('teacher', 'admin'), generateOutline)
 
 // POST /api/ai/chat - Chat with AI teacher (All authenticated users)
 router.post('/chat', chat);
+
+// GET /api/ai/recommendations - Get personalized course recommendations (All authenticated users)
+router.get('/recommendations', getRecommendations);
+
+// GET /api/ai/study-tips - Get personalized study tips (All authenticated users)
+router.get('/study-tips', getStudyTips);
 
 module.exports = router;
