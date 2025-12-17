@@ -3,9 +3,9 @@ const { sequelize } = require('../config/db');
 
 const Course = sequelize.define('Course', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
   title: {
     type: DataTypes.STRING,
@@ -16,7 +16,7 @@ const Course = sequelize.define('Course', {
     allowNull: false
   },
   instructorId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     comment: 'Teacher/instructor user ID'
   },
