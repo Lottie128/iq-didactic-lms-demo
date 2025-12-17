@@ -1,4 +1,9 @@
-const API_URL = process.env.REACT_APP_API_URL;
+// API Configuration with fallback
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+if (!process.env.REACT_APP_API_URL) {
+  console.warn('REACT_APP_API_URL not set, using default:', API_URL);
+}
 
 // Helper function to get auth token
 const getToken = () => {
@@ -17,18 +22,38 @@ const authFetch = async (url, options = {}) => {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
 
-  const data = await response.json();
+    // Handle non-JSON responses
+    const contentType = response.headers.get('content-type');
+    const data = contentType && contentType.includes('application/json')
+      ? await response.json()
+      : { message: await response.text() };
 
-  if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong');
+    if (!response.ok) {
+      // Handle specific error cases
+      if (response.status === 401) {
+        // Token expired or invalid - clear auth and redirect
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+      
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    // Network errors
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      throw new Error('Network error. Please check your internet connection.');
+    }
+    throw error;
   }
-
-  return data;
 };
 
 // Authentication APIs
@@ -62,12 +87,17 @@ export const authAPI = {
   },
 
   async logout() {
-    await authFetch(`${API_URL}/auth/logout`, {
-      method: 'POST'
-    });
-    
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    try {
+      await authFetch(`${API_URL}/auth/logout`, {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Logout API error:', error);
+      // Continue with local cleanup even if API fails
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
   },
 
   async getMe() {
@@ -101,7 +131,7 @@ export const userAPI = {
 
   async getAllUsers(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return await authFetch(`${API_URL}/users?${query}`);
+    return await authFetch(`${API_URL}/users${query ? `?${query}` : ''}`);
   },
 
   async getUserById(id) {
@@ -119,12 +149,7 @@ export const userAPI = {
 export const courseAPI = {
   async getAllCourses(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return await authFetch(`${API_URL}/courses?${query}`);
-  },
-
-  // Alias for consistency
-  async getCourses(params = {}) {
-    return this.getAllCourses(params);
+    return await authFetch(`${API_URL}/courses${query ? `?${query}` : ''}`);
   },
 
   async getCourseById(id) {
@@ -274,7 +299,7 @@ export const quizAPI = {
 export const reviewAPI = {
   async getCourseReviews(courseId, params = {}) {
     const query = new URLSearchParams(params).toString();
-    return await authFetch(`${API_URL}/reviews/course/${courseId}?${query}`);
+    return await authFetch(`${API_URL}/reviews/course/${courseId}${query ? `?${query}` : ''}`);
   },
 
   async createReview(courseId, rating, comment) {
@@ -309,7 +334,7 @@ export const reviewAPI = {
 export const discussionAPI = {
   async getDiscussions(courseId, params = {}) {
     const query = new URLSearchParams(params).toString();
-    return await authFetch(`${API_URL}/discussions/course/${courseId}?${query}`);
+    return await authFetch(`${API_URL}/discussions/course/${courseId}${query ? `?${query}` : ''}`);
   },
 
   async getDiscussionById(id) {
@@ -413,7 +438,7 @@ export const certificateAPI = {
 export const notificationAPI = {
   async getNotifications(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return await authFetch(`${API_URL}/notifications?${query}`);
+    return await authFetch(`${API_URL}/notifications${query ? `?${query}` : ''}`);
   },
 
   async markAsRead(id) {
@@ -443,7 +468,7 @@ export const adminAPI = {
 
   async getAllUsers(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return await authFetch(`${API_URL}/users?${query}`);
+    return await authFetch(`${API_URL}/users${query ? `?${query}` : ''}`);
   },
 
   async createUser(userData) {
@@ -456,7 +481,7 @@ export const adminAPI = {
 
   async getUserAnalytics(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return await authFetch(`${API_URL}/admin/analytics/users?${query}`);
+    return await authFetch(`${API_URL}/admin/analytics/users${query ? `?${query}` : ''}`);
   },
 
   async getCourseAnalytics() {
