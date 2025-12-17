@@ -13,6 +13,12 @@
   margin: 0 auto;
 }
 
+/* Progress Bar */
+.progress-bar-container {
+  padding: 16px 20px;
+  border-radius: 16px;
+}
+
 /* Tab Navigation */
 .course-tabs {
   display: flex;
@@ -35,6 +41,7 @@
   transition: all 0.3s ease;
   font-size: 14px;
   font-weight: 500;
+  position: relative;
 }
 
 .tab-btn:hover {
@@ -146,15 +153,28 @@
   border-radius: 16px;
   border-left: 3px solid transparent;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .lesson-item:hover {
   transform: translateX(4px);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.2);
 }
 
-/* Color code lesson types */
-.lesson-item:has(.lesson-number svg[data-type="video"]) {
-  border-left-color: #667eea;
+/* Lesson validation states */
+.lesson-valid {
+  border-left-color: #22c55e;
+}
+
+.lesson-invalid {
+  border-left-color: #f59e0b;
+}
+
+/* Dragging state */
+.lesson-item:active {
+  cursor: grabbing;
+  opacity: 0.8;
+  transform: scale(0.98);
 }
 
 .lesson-header {
@@ -191,6 +211,13 @@
 }
 
 .btn-icon-small:hover {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: rgba(102, 126, 234, 0.4);
+  color: #667eea;
+  transform: scale(1.1);
+}
+
+.btn-icon-small:last-child:hover {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.4);
   color: #ef4444;
@@ -258,6 +285,12 @@
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.question-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Empty States */
@@ -337,6 +370,25 @@
   min-width: 140px;
 }
 
+.form-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.saving-indicator {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .create-course-main {
@@ -350,6 +402,8 @@
 
   .tab-btn {
     white-space: nowrap;
+    font-size: 13px;
+    padding: 10px 16px;
   }
 
   .form-grid,
@@ -375,5 +429,10 @@
 
   .form-actions button {
     width: 100%;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start !important;
   }
 }
