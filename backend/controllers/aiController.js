@@ -16,7 +16,7 @@ exports.generateQuiz = async (req, res, next) => {
     }
 
     // Get course information
-    const course = await Course.findByPk(String(courseId));
+    const course = await Course.findByPk(parseInt(courseId));
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -36,7 +36,7 @@ exports.generateQuiz = async (req, res, next) => {
 
     // If lessonId provided, get lesson content for context
     if (lessonId) {
-      const lesson = await Lesson.findByPk(lessonId);
+      const lesson = await Lesson.findByPk(parseInt(lessonId));
       if (lesson) {
         lessonContent = `${lesson.title}\n\n${lesson.description || ''}\n\n${lesson.content || ''}`;
       }
@@ -79,7 +79,7 @@ exports.generateContent = async (req, res, next) => {
     }
 
     // Get course for context
-    const course = await Course.findByPk(String(courseId));
+    const course = await Course.findByPk(parseInt(courseId));
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -169,14 +169,14 @@ exports.chat = async (req, res, next) => {
 
     // Build context from course and lesson if provided
     if (courseId) {
-      const course = await Course.findByPk(String(courseId));
+      const course = await Course.findByPk(parseInt(courseId));
       if (course) {
         context += `Course: ${course.title}\n${course.description}\n\n`;
       }
     }
 
     if (lessonId) {
-      const lesson = await Lesson.findByPk(lessonId);
+      const lesson = await Lesson.findByPk(parseInt(lessonId));
       if (lesson) {
         context += `Lesson: ${lesson.title}\n${lesson.description || ''}\n${lesson.content || ''}`;
       }
