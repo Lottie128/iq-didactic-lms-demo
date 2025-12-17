@@ -1,0 +1,13 @@
+// THIS MIGRATION HAS BEEN DISABLED
+// It was a one-time migration to drop UUID tables
+// Database schema is now correct
+// Keep this file for reference only
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    console.log('⏭️  Skipping disabled migration: 002-drop-all-uuid-tables');
+  },
+  down: async (queryInterface, Sequelize) => {
+    console.log('⏭️  Skipping disabled migration');
+  }
+};
