@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Upload, Video, FileText, Image as ImageIcon, Sparkles, LogOut, Save, CheckCircle, PlayCircle, BookOpen, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Plus, X, Upload, Video, FileText, Image as ImageIcon, Sparkles, LogOut, Save, CheckCircle, PlayCircle, BookOpen, HelpCircle, GripVertical, AlertCircle, Check } from 'lucide-react';
 import { courseAPI, lessonAPI, quizAPI } from '../services/api';
 import './CreateCourse.css';
 
@@ -10,6 +10,7 @@ const CreateCourse = ({ user, onLogout }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   
   const [courseData, setCourseData] = useState({
     title: '',
@@ -25,26 +26,138 @@ const CreateCourse = ({ user, onLogout }) => {
 
   const [lessons, setLessons] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
+  const [draggedLesson, setDraggedLesson] = useState(null);
+
+  // Auto-save draft to localStorage
+  useEffect(() => {
+    const draft = { courseData, lessons, quizzes };
+    localStorage.setItem('courseDraft', JSON.stringify(draft));
+  }, [courseData, lessons, quizzes]);
+
+  // Load draft on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('courseDraft');
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        if (draft.courseData.title) {
+          const loadDraft = window.confirm('Found a saved draft. Would you like to continue where you left off?');
+          if (loadDraft) {
+            setCourseData(draft.courseData);
+            setLessons(draft.lessons || []);
+            setQuizzes(draft.quizzes || []);
+          }
+        }
+      } catch (e) {
+        console.error('Error loading draft:', e);
+      }
+    }
+  }, []);
+
+  // Validate YouTube URL
+  const getYouTubeVideoId = (url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  // Validate lesson data
+  const validateLesson = (lesson) => {
+    const errors = [];
+    
+    if (!lesson.title.trim()) {
+      errors.push('Title is required');
+    }
+    
+    if (lesson.type === 'video') {
+      if (!lesson.url.trim()) {
+        errors.push('Video URL is required');
+      } else if (!getYouTubeVideoId(lesson.url)) {
+        errors.push('Invalid YouTube URL');
+      }
+    }
+    
+    if (lesson.type === 'text' && !lesson.content.trim()) {
+      errors.push('Content is required');
+    }
+    
+    if (lesson.type === 'image' && !lesson.url.trim()) {
+      errors.push('Image URL is required');
+    }
+    
+    return errors;
+  };
 
   const addLesson = (type) => {
     const newLesson = {
       id: Date.now(),
-      type, // 'video', 'text', 'image'
+      type,
       title: '',
       content: '',
       url: '',
       duration: '',
+      order: lessons.length + 1,
+      isValid: false
+    };
+    setLessons([...lessons, newLesson]);
+    setActiveTab('lessons'); // Switch to lessons tab
+  };
+
+  const updateLesson = (id, field, value) => {
+    setLessons(lessons.map(l => {
+      if (l.id === id) {
+        const updated = { ...l, [field]: value };
+        const errors = validateLesson(updated);
+        updated.isValid = errors.length === 0;
+        return updated;
+      }
+      return l;
+    }));
+  };
+
+  const removeLesson = (id) => {
+    if (window.confirm('Are you sure you want to remove this lesson?')) {
+      setLessons(lessons.filter(l => l.id !== id));
+    }
+  };
+
+  const duplicateLesson = (lesson) => {
+    const newLesson = {
+      ...lesson,
+      id: Date.now(),
+      title: `${lesson.title} (Copy)`,
       order: lessons.length + 1
     };
     setLessons([...lessons, newLesson]);
   };
 
-  const updateLesson = (id, field, value) => {
-    setLessons(lessons.map(l => l.id === id ? { ...l, [field]: value } : l));
+  // Drag and drop for lessons
+  const handleDragStart = (e, lesson) => {
+    setDraggedLesson(lesson);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  const removeLesson = (id) => {
-    setLessons(lessons.filter(l => l.id !== id));
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, targetLesson) => {
+    e.preventDefault();
+    if (!draggedLesson || draggedLesson.id === targetLesson.id) return;
+
+    const draggedIndex = lessons.findIndex(l => l.id === draggedLesson.id);
+    const targetIndex = lessons.findIndex(l => l.id === targetLesson.id);
+
+    const newLessons = [...lessons];
+    newLessons.splice(draggedIndex, 1);
+    newLessons.splice(targetIndex, 0, draggedLesson);
+
+    // Update order numbers
+    const reorderedLessons = newLessons.map((l, idx) => ({ ...l, order: idx + 1 }));
+    setLessons(reorderedLessons);
+    setDraggedLesson(null);
   };
 
   const addQuiz = () => {
@@ -66,6 +179,7 @@ const CreateCourse = ({ user, onLogout }) => {
       ]
     };
     setQuizzes([...quizzes, newQuiz]);
+    setActiveTab('quizzes'); // Switch to quizzes tab
   };
 
   const updateQuiz = (quizId, field, value) => {
@@ -105,8 +219,47 @@ const CreateCourse = ({ user, onLogout }) => {
     }));
   };
 
+  const removeQuestion = (quizId, questionId) => {
+    setQuizzes(quizzes.map(q => {
+      if (q.id === quizId) {
+        return {
+          ...q,
+          questions: q.questions.filter(ques => ques.id !== questionId)
+        };
+      }
+      return q;
+    }));
+  };
+
   const removeQuiz = (quizId) => {
-    setQuizzes(quizzes.filter(q => q.id !== quizId));
+    if (window.confirm('Are you sure you want to remove this quiz?')) {
+      setQuizzes(quizzes.filter(q => q.id !== quizId));
+    }
+  };
+
+  // Calculate progress
+  const getProgress = () => {
+    let score = 0;
+    const total = 100;
+
+    // Course info (40 points)
+    if (courseData.title) score += 10;
+    if (courseData.description) score += 10;
+    if (courseData.category) score += 5;
+    if (courseData.level) score += 5;
+    if (courseData.thumbnail) score += 10;
+
+    // Lessons (40 points)
+    if (lessons.length > 0) score += 20;
+    const validLessons = lessons.filter(l => l.isValid).length;
+    if (validLessons === lessons.length && lessons.length > 0) score += 20;
+
+    // Quizzes (20 points)
+    if (quizzes.length > 0) score += 10;
+    const validQuizzes = quizzes.filter(q => q.title && q.questions.length > 0).length;
+    if (validQuizzes === quizzes.length && quizzes.length > 0) score += 10;
+
+    return Math.min(score, 100);
   };
 
   const handleSubmit = async (e) => {
@@ -114,11 +267,34 @@ const CreateCourse = ({ user, onLogout }) => {
     setError('');
     setSuccess('');
     setSaving(true);
+    setValidationErrors({});
+
+    // Validate before submission
+    const errors = {};
+    
+    if (!courseData.title.trim()) errors.title = 'Course title is required';
+    if (!courseData.description.trim()) errors.description = 'Description is required';
+    if (lessons.length === 0) errors.lessons = 'Add at least one lesson';
+
+    // Validate each lesson
+    lessons.forEach((lesson, idx) => {
+      const lessonErrors = validateLesson(lesson);
+      if (lessonErrors.length > 0) {
+        errors[`lesson_${idx}`] = lessonErrors.join(', ');
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setError('Please fix the errors before submitting');
+      setSaving(false);
+      return;
+    }
 
     try {
       console.log('Creating course with data:', courseData);
       
-      // Create course WITHOUT videos field
+      // Create course
       const courseResponse = await courseAPI.createCourse({
         title: courseData.title,
         description: courseData.description,
@@ -130,20 +306,19 @@ const CreateCourse = ({ user, onLogout }) => {
       });
 
       console.log('Course created:', courseResponse);
-
       const courseId = courseResponse.data?.id;
 
       if (!courseId) {
         throw new Error('Course created but ID not returned');
       }
 
-      // Create lessons
+      // Create lessons with progress feedback
       let lessonsCreated = 0;
-      for (const lesson of lessons) {
+      for (let i = 0; i < lessons.length; i++) {
+        const lesson = lessons[i];
         try {
-          console.log('Creating lesson:', lesson);
+          console.log(`Creating lesson ${i + 1}/${lessons.length}:`, lesson.title);
           
-          // Prepare lesson data based on type
           const lessonData = {
             courseId: courseId,
             title: lesson.title,
@@ -151,38 +326,31 @@ const CreateCourse = ({ user, onLogout }) => {
             order: lesson.order
           };
 
-          // Add type-specific fields
           if (lesson.type === 'video') {
             lessonData.videoUrl = lesson.url;
             lessonData.duration = parseInt(lesson.duration) || 0;
           } else if (lesson.type === 'text') {
             lessonData.description = lesson.content;
           } else if (lesson.type === 'image') {
-            lessonData.videoUrl = lesson.url; // Store image URL in videoUrl field
+            lessonData.videoUrl = lesson.url;
             lessonData.description = lesson.content;
           }
 
-          const lessonResponse = await lessonAPI.createLesson(lessonData);
-          console.log('Lesson created:', lessonResponse);
+          await lessonAPI.createLesson(lessonData);
           lessonsCreated++;
         } catch (lessonError) {
           console.error('Error creating lesson:', lesson.title, lessonError);
-          // Continue with other lessons
         }
       }
-
-      console.log(`Created ${lessonsCreated} of ${lessons.length} lessons`);
 
       // Create quizzes
       let quizzesCreated = 0;
       for (const quiz of quizzes) {
         try {
-          console.log('Creating quiz:', quiz);
-          
-          const quizResponse = await quizAPI.createQuiz({
+          await quizAPI.createQuiz({
             courseId: courseId,
             title: quiz.title,
-            description: quiz.description,
+            description: quiz.description || 'Course quiz',
             timeLimit: quiz.timeLimit,
             passingScore: quiz.passingScore,
             questions: quiz.questions.map(q => ({
@@ -193,21 +361,18 @@ const CreateCourse = ({ user, onLogout }) => {
               explanation: q.explanation || ''
             }))
           });
-          
-          console.log('Quiz created:', quizResponse);
           quizzesCreated++;
         } catch (quizError) {
           console.error('Error creating quiz:', quiz.title, quizError);
-          // Continue with other quizzes
         }
       }
 
-      console.log(`Created ${quizzesCreated} of ${quizzes.length} quizzes`);
-
-      setSuccess(`Course "${courseData.title}" created successfully! (${lessonsCreated} lessons, ${quizzesCreated} quizzes)`);
+      setSuccess(`🎉 Course "${courseData.title}" created successfully! (${lessonsCreated} lessons, ${quizzesCreated} quizzes)`);
+      
+      // Clear draft
+      localStorage.removeItem('courseDraft');
       
       setTimeout(() => {
-        // Redirect to teacher dashboard to see the course
         navigate('/teacher');
       }, 2000);
 
@@ -218,6 +383,9 @@ const CreateCourse = ({ user, onLogout }) => {
       setSaving(false);
     }
   };
+
+  const progress = getProgress();
+  const validLessonsCount = lessons.filter(l => l.isValid).length;
 
   return (
     <div className="create-course-root">
@@ -249,16 +417,42 @@ const CreateCourse = ({ user, onLogout }) => {
       </header>
 
       <main className="create-course-main fade-in">
+        {/* Progress Bar */}
+        <div className="progress-bar-container glass-strong" style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600 }}>Course Completion</span>
+            <span style={{ fontSize: '14px', color: progress === 100 ? '#22c55e' : '#667eea' }}>{progress}%</span>
+          </div>
+          <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div style={{ 
+              height: '100%', 
+              width: `${progress}%`, 
+              background: progress === 100 ? 'linear-gradient(90deg, #22c55e, #16a34a)' : 'linear-gradient(90deg, #667eea, #764ba2)',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        </div>
+
         {error && (
-          <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px' }}>
-            {error}
+          <div style={{ padding: '12px 16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', color: '#ef4444', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <strong>{error}</strong>
+              {Object.keys(validationErrors).length > 0 && (
+                <ul style={{ marginTop: '8px', marginLeft: '20px', fontSize: '14px' }}>
+                  {Object.entries(validationErrors).map(([key, value]) => (
+                    <li key={key}>{value}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
 
         {success && (
-          <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px' }}>
-            <CheckCircle size={16} style={{ display: 'inline', marginRight: '8px' }} />
-            {success}
+          <div style={{ padding: '12px 16px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '12px', color: '#22c55e', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle size={18} />
+            <strong>{success}</strong>
           </div>
         )}
 
@@ -270,13 +464,19 @@ const CreateCourse = ({ user, onLogout }) => {
           >
             <BookOpen size={18} />
             <span>Course Info</span>
+            {courseData.title && courseData.description && (
+              <Check size={14} style={{ color: '#22c55e', marginLeft: 'auto' }} />
+            )}
           </button>
           <button 
             className={`tab-btn ${activeTab === 'lessons' ? 'active' : ''}`}
             onClick={() => setActiveTab('lessons')}
           >
             <PlayCircle size={18} />
-            <span>Lessons ({lessons.length})</span>
+            <span>Lessons ({validLessonsCount}/{lessons.length})</span>
+            {lessons.length > 0 && validLessonsCount === lessons.length && (
+              <Check size={14} style={{ color: '#22c55e', marginLeft: 'auto' }} />
+            )}
           </button>
           <button 
             className={`tab-btn ${activeTab === 'quizzes' ? 'active' : ''}`}
@@ -284,6 +484,9 @@ const CreateCourse = ({ user, onLogout }) => {
           >
             <HelpCircle size={18} />
             <span>Quizzes ({quizzes.length})</span>
+            {quizzes.length > 0 && (
+              <Check size={14} style={{ color: '#22c55e', marginLeft: 'auto' }} />
+            )}
           </button>
         </div>
 
@@ -316,6 +519,9 @@ const CreateCourse = ({ user, onLogout }) => {
                       rows={5}
                       required
                     />
+                    <small style={{ color: courseData.description.length > 100 ? '#22c55e' : '#999' }}>
+                      {courseData.description.length} / 100+ characters recommended
+                    </small>
                   </div>
 
                   <div className="form-field">
@@ -411,104 +617,147 @@ const CreateCourse = ({ user, onLogout }) => {
                   <PlayCircle size={48} style={{ opacity: 0.3 }} />
                   <h4>No lessons yet</h4>
                   <p>Add video, text, or image lessons to your course</p>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                    <button type="button" className="btn btn-primary" onClick={() => addLesson('video')}>
+                      <Video size={16} />
+                      Start with Video
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="lessons-list">
-                  {lessons.map((lesson, index) => (
-                    <div key={lesson.id} className="lesson-item glass">
-                      <div className="lesson-header">
-                        <div className="lesson-number">
-                          {lesson.type === 'video' && <Video size={16} />}
-                          {lesson.type === 'text' && <FileText size={16} />}
-                          {lesson.type === 'image' && <ImageIcon size={16} />}
-                          <span>Lesson {index + 1} ({lesson.type})</span>
+                <>
+                  <div style={{ marginBottom: '15px', padding: '12px', background: 'rgba(102, 126, 234, 0.1)', borderRadius: '8px', fontSize: '14px' }}>
+                    💡 <strong>Tip:</strong> Drag lessons by the grip icon to reorder them
+                  </div>
+                  <div className="lessons-list">
+                    {lessons.map((lesson, index) => (
+                      <div 
+                        key={lesson.id} 
+                        className={`lesson-item glass ${!lesson.isValid ? 'lesson-invalid' : 'lesson-valid'}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, lesson)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, lesson)}
+                        style={{ cursor: 'grab' }}
+                      >
+                        <div className="lesson-header">
+                          <div className="lesson-number" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <GripVertical size={16} style={{ opacity: 0.5, cursor: 'grab' }} />
+                            {lesson.type === 'video' && <Video size={16} />}
+                            {lesson.type === 'text' && <FileText size={16} />}
+                            {lesson.type === 'image' && <ImageIcon size={16} />}
+                            <span>Lesson {index + 1} ({lesson.type})</span>
+                            {lesson.isValid && <Check size={14} style={{ color: '#22c55e' }} />}
+                            {!lesson.isValid && <AlertCircle size={14} style={{ color: '#f59e0b' }} />}
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              type="button" 
+                              className="btn-icon-small" 
+                              onClick={() => duplicateLesson(lesson)}
+                              title="Duplicate lesson"
+                            >
+                              <Plus size={14} />
+                            </button>
+                            <button 
+                              type="button" 
+                              className="btn-icon-small" 
+                              onClick={() => removeLesson(lesson.id)}
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
                         </div>
-                        <button type="button" className="btn-icon-small" onClick={() => removeLesson(lesson.id)}>
-                          <X size={16} />
-                        </button>
-                      </div>
-                      <div className="lesson-fields">
-                        <div className="form-field full-width">
-                          <label>Lesson Title *</label>
-                          <input
-                            className="input"
-                            type="text"
-                            placeholder="Enter lesson title"
-                            value={lesson.title}
-                            onChange={(e) => updateLesson(lesson.id, 'title', e.target.value)}
-                            required
-                          />
-                        </div>
-
-                        {lesson.type === 'video' && (
-                          <>
-                            <div className="form-field">
-                              <label>YouTube URL *</label>
-                              <input
-                                className="input"
-                                type="url"
-                                placeholder="https://www.youtube.com/watch?v=..."
-                                value={lesson.url}
-                                onChange={(e) => updateLesson(lesson.id, 'url', e.target.value)}
-                                required
-                              />
-                            </div>
-                            <div className="form-field">
-                              <label>Duration (minutes)</label>
-                              <input
-                                className="input"
-                                type="number"
-                                placeholder="e.g., 15"
-                                value={lesson.duration}
-                                onChange={(e) => updateLesson(lesson.id, 'duration', e.target.value)}
-                              />
-                            </div>
-                          </>
-                        )}
-
-                        {lesson.type === 'text' && (
+                        <div className="lesson-fields">
                           <div className="form-field full-width">
-                            <label>Content *</label>
-                            <textarea
-                              className="input textarea"
-                              placeholder="Write your lesson content here..."
-                              value={lesson.content}
-                              onChange={(e) => updateLesson(lesson.id, 'content', e.target.value)}
-                              rows={8}
+                            <label>Lesson Title *</label>
+                            <input
+                              className="input"
+                              type="text"
+                              placeholder="Enter lesson title"
+                              value={lesson.title}
+                              onChange={(e) => updateLesson(lesson.id, 'title', e.target.value)}
                               required
                             />
                           </div>
-                        )}
 
-                        {lesson.type === 'image' && (
-                          <>
-                            <div className="form-field">
-                              <label>Image URL *</label>
-                              <input
-                                className="input"
-                                type="url"
-                                placeholder="https://example.com/image.jpg"
-                                value={lesson.url}
-                                onChange={(e) => updateLesson(lesson.id, 'url', e.target.value)}
-                                required
-                              />
-                            </div>
+                          {lesson.type === 'video' && (
+                            <>
+                              <div className="form-field">
+                                <label>YouTube URL *</label>
+                                <input
+                                  className="input"
+                                  type="url"
+                                  placeholder="https://www.youtube.com/watch?v=..."
+                                  value={lesson.url}
+                                  onChange={(e) => updateLesson(lesson.id, 'url', e.target.value)}
+                                  required
+                                />
+                                {lesson.url && getYouTubeVideoId(lesson.url) && (
+                                  <small style={{ color: '#22c55e' }}>✓ Valid YouTube URL</small>
+                                )}
+                                {lesson.url && !getYouTubeVideoId(lesson.url) && (
+                                  <small style={{ color: '#ef4444' }}>✗ Invalid YouTube URL</small>
+                                )}
+                              </div>
+                              <div className="form-field">
+                                <label>Duration (minutes)</label>
+                                <input
+                                  className="input"
+                                  type="number"
+                                  placeholder="e.g., 15"
+                                  value={lesson.duration}
+                                  onChange={(e) => updateLesson(lesson.id, 'duration', e.target.value)}
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {lesson.type === 'text' && (
                             <div className="form-field full-width">
-                              <label>Description</label>
+                              <label>Content *</label>
                               <textarea
                                 className="input textarea"
-                                placeholder="Describe the image and its significance..."
+                                placeholder="Write your lesson content here..."
                                 value={lesson.content}
                                 onChange={(e) => updateLesson(lesson.id, 'content', e.target.value)}
-                                rows={4}
+                                rows={8}
+                                required
                               />
+                              <small>{lesson.content.length} characters</small>
                             </div>
-                          </>
-                        )}
+                          )}
+
+                          {lesson.type === 'image' && (
+                            <>
+                              <div className="form-field">
+                                <label>Image URL *</label>
+                                <input
+                                  className="input"
+                                  type="url"
+                                  placeholder="https://example.com/image.jpg"
+                                  value={lesson.url}
+                                  onChange={(e) => updateLesson(lesson.id, 'url', e.target.value)}
+                                  required
+                                />
+                              </div>
+                              <div className="form-field full-width">
+                                <label>Description</label>
+                                <textarea
+                                  className="input textarea"
+                                  placeholder="Describe the image and its significance..."
+                                  value={lesson.content}
+                                  onChange={(e) => updateLesson(lesson.id, 'content', e.target.value)}
+                                  rows={4}
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </>
               )}
             </section>
           )}
@@ -529,6 +778,10 @@ const CreateCourse = ({ user, onLogout }) => {
                   <HelpCircle size={48} style={{ opacity: 0.3 }} />
                   <h4>No quizzes yet</h4>
                   <p>Create quizzes to test student knowledge</p>
+                  <button type="button" className="btn btn-primary" onClick={addQuiz} style={{ marginTop: '20px' }}>
+                    <Plus size={16} />
+                    Create First Quiz
+                  </button>
                 </div>
               ) : (
                 <div className="quizzes-list">
@@ -586,7 +839,18 @@ const CreateCourse = ({ user, onLogout }) => {
 
                         {quiz.questions.map((question, qIndex) => (
                           <div key={question.id} className="question-item">
-                            <label style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>Question {qIndex + 1}</label>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                              <label style={{ fontWeight: 600 }}>Question {qIndex + 1}</label>
+                              {quiz.questions.length > 1 && (
+                                <button 
+                                  type="button" 
+                                  className="btn-icon-small" 
+                                  onClick={() => removeQuestion(quiz.id, question.id)}
+                                >
+                                  <X size={14} />
+                                </button>
+                              )}
+                            </div>
                             <input
                               className="input"
                               type="text"
@@ -598,6 +862,7 @@ const CreateCourse = ({ user, onLogout }) => {
                             />
 
                             <div style={{ marginBottom: '12px' }}>
+                              <small style={{ display: 'block', marginBottom: '8px', opacity: 0.7 }}>Select the correct answer:</small>
                               {question.options.map((option, oIndex) => (
                                 <div key={oIndex} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <input
@@ -634,10 +899,14 @@ const CreateCourse = ({ user, onLogout }) => {
 
           {/* Action Buttons */}
           <div className="form-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>
+            <button type="button" className="btn btn-secondary" onClick={() => {
+              if (window.confirm('Are you sure you want to cancel? Your draft will be saved.')) {
+                navigate(-1);
+              }
+            }}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
+            <button type="submit" className="btn btn-primary" disabled={saving || progress < 40}>
               <Save size={16} />
               {saving ? 'Creating...' : 'Create Course'}
             </button>
