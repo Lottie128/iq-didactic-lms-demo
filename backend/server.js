@@ -18,6 +18,7 @@ const achievementRoutes = require('./routes/achievements');
 const certificateRoutes = require('./routes/certificates');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
+const aiRoutes = require('./routes/ai');
 const errorHandler = require('./middleware/errorHandler');
 const { createRateLimiter } = require('./middleware/rateLimiter');
 
@@ -130,6 +131,7 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes); // ✅ AI Routes Added
 
 // Error handling middleware
 app.use(errorHandler);
@@ -236,6 +238,7 @@ const startServer = async () => {
       console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🌐 API URL: http://localhost:${PORT}`);
       console.log(`✅ CORS enabled for: ${allowedOrigins.filter(Boolean).join(', ')}`);
+      console.log(`🤖 AI Features: ${process.env.GEMINI_API_KEY ? 'Enabled' : 'Disabled (Set GEMINI_API_KEY)'}`);
       console.log('='.repeat(60) + '\n');
     });
   } catch (error) {
