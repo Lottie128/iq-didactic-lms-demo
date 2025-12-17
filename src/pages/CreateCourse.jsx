@@ -54,12 +54,29 @@ const CreateCourse = ({ user, onLogout }) => {
     }
   }, []);
 
-  // Validate YouTube URL
-  const getYouTubeVideoId = (url) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+  // Validate Video URL (supports all platforms)
+  const isValidVideoUrl = (url) => {
+    if (!url) return false;
+    try {
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  // Get video platform name for display
+  const getVideoPlatformName = (url) => {
+    if (!url) return 'Unknown';
+    const urlLower = url.toLowerCase();
+    if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) return 'YouTube';
+    if (urlLower.includes('vimeo.com')) return 'Vimeo';
+    if (urlLower.includes('s3.amazonaws.com') || urlLower.includes('s3-')) return 'AWS S3';
+    if (urlLower.includes('cloudflarestream.com') || urlLower.includes('videodelivery.net')) return 'Cloudflare';
+    if (urlLower.includes('wistia.com')) return 'Wistia';
+    if (urlLower.includes('dailymotion.com')) return 'Dailymotion';
+    if (urlLower.match(/\.(mp4|webm|ogg|mov)$/)) return 'Direct Video';
+    return 'Custom Platform';
   };
 
   // Validate lesson data
@@ -73,8 +90,8 @@ const CreateCourse = ({ user, onLogout }) => {
     if (lesson.type === 'video') {
       if (!lesson.url.trim()) {
         errors.push('Video URL is required');
-      } else if (!getYouTubeVideoId(lesson.url)) {
-        errors.push('Invalid YouTube URL');
+      } else if (!isValidVideoUrl(lesson.url)) {
+        errors.push('Invalid video URL - must start with http:// or https://');
       }
     }
     
@@ -280,7 +297,7 @@ const CreateCourse = ({ user, onLogout }) => {
     lessons.forEach((lesson, idx) => {
       const lessonErrors = validateLesson(lesson);
       if (lessonErrors.length > 0) {
-        errors[`lesson_${idx}`] = lessonErrors.join(', ');
+        errors[`lesson_${idx}`] = `Lesson ${idx + 1}: ${lessonErrors.join(', ')}`;
       }
     });
 
@@ -302,7 +319,9 @@ const CreateCourse = ({ user, onLogout }) => {
         level: courseData.level,
         duration: courseData.duration,
         price: courseData.price,
-        thumbnail: courseData.thumbnail
+        thumbnail: courseData.thumbnail,
+        requirements: courseData.requirements,
+        whatYouLearn: courseData.whatYouLearn
       });
 
       console.log('Course created:', courseResponse);
@@ -314,6 +333,8 @@ const CreateCourse = ({ user, onLogout }) => {
 
       // Create lessons with progress feedback
       let lessonsCreated = 0;
+      const lessonErrors = [];
+      
       for (let i = 0; i < lessons.length; i++) {
         const lesson = lessons[i];
         try {
@@ -322,29 +343,33 @@ const CreateCourse = ({ user, onLogout }) => {
           const lessonData = {
             courseId: courseId,
             title: lesson.title,
+            description: lesson.content || lesson.title,
+            content: lesson.content || '',
             type: lesson.type,
-            order: lesson.order
+            order: lesson.order,
+            duration: parseInt(lesson.duration) || 0
           };
 
           if (lesson.type === 'video') {
             lessonData.videoUrl = lesson.url;
-            lessonData.duration = parseInt(lesson.duration) || 0;
-          } else if (lesson.type === 'text') {
-            lessonData.description = lesson.content;
+            // Backend will auto-detect video platform
           } else if (lesson.type === 'image') {
             lessonData.videoUrl = lesson.url;
-            lessonData.description = lesson.content;
           }
 
-          await lessonAPI.createLesson(lessonData);
+          const lessonResponse = await lessonAPI.createLesson(lessonData);
+          console.log('Lesson created:', lessonResponse);
           lessonsCreated++;
         } catch (lessonError) {
-          console.error('Error creating lesson:', lesson.title, lessonError);
+          console.error('Error creating lesson:', lesson.title, lessonError.response?.data || lessonError);
+          lessonErrors.push(`"${lesson.title}": ${lessonError.response?.data?.message || lessonError.message}`);
         }
       }
 
       // Create quizzes
       let quizzesCreated = 0;
+      const quizErrors = [];
+      
       for (const quiz of quizzes) {
         try {
           await quizAPI.createQuiz({
@@ -363,22 +388,34 @@ const CreateCourse = ({ user, onLogout }) => {
           });
           quizzesCreated++;
         } catch (quizError) {
-          console.error('Error creating quiz:', quiz.title, quizError);
+          console.error('Error creating quiz:', quiz.title, quizError.response?.data || quizError);
+          quizErrors.push(`"${quiz.title}": ${quizError.response?.data?.message || quizError.message}`);
         }
       }
 
-      setSuccess(`🎉 Course "${courseData.title}" created successfully! (${lessonsCreated} lessons, ${quizzesCreated} quizzes)`);
+      // Show success message with details
+      let successMsg = `🎉 Course "${courseData.title}" created successfully!`;
+      if (lessonsCreated > 0) successMsg += ` ${lessonsCreated} lessons added.`;
+      if (quizzesCreated > 0) successMsg += ` ${quizzesCreated} quizzes added.`;
+      
+      if (lessonErrors.length > 0 || quizErrors.length > 0) {
+        successMsg += ' Some items failed:';
+        setError([...lessonErrors, ...quizErrors].join(' | '));
+      }
+      
+      setSuccess(successMsg);
       
       // Clear draft
       localStorage.removeItem('courseDraft');
       
       setTimeout(() => {
         navigate('/teacher');
-      }, 2000);
+      }, 2500);
 
     } catch (error) {
       console.error('Error creating course:', error);
-      setError(error.message || 'Failed to create course. Please try again.');
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to create course';
+      setError(`Failed to create course: ${errorMsg}. Please try again.`);
     } finally {
       setSaving(false);
     }
@@ -627,7 +664,7 @@ const CreateCourse = ({ user, onLogout }) => {
               ) : (
                 <>
                   <div style={{ marginBottom: '15px', padding: '12px', background: 'rgba(102, 126, 234, 0.1)', borderRadius: '8px', fontSize: '14px' }}>
-                    💡 <strong>Tip:</strong> Drag lessons by the grip icon to reorder them
+                    💡 <strong>Tip:</strong> Drag lessons by the grip icon to reorder them. Supports YouTube, Vimeo, AWS S3, Cloudflare, and more!
                   </div>
                   <div className="lessons-list">
                     {lessons.map((lesson, index) => (
@@ -684,20 +721,20 @@ const CreateCourse = ({ user, onLogout }) => {
                           {lesson.type === 'video' && (
                             <>
                               <div className="form-field">
-                                <label>YouTube URL *</label>
+                                <label>Video URL * (Any Platform)</label>
                                 <input
                                   className="input"
                                   type="url"
-                                  placeholder="https://www.youtube.com/watch?v=..."
+                                  placeholder="https://www.youtube.com/watch?v=... or any video URL"
                                   value={lesson.url}
                                   onChange={(e) => updateLesson(lesson.id, 'url', e.target.value)}
                                   required
                                 />
-                                {lesson.url && getYouTubeVideoId(lesson.url) && (
-                                  <small style={{ color: '#22c55e' }}>✓ Valid YouTube URL</small>
+                                {lesson.url && isValidVideoUrl(lesson.url) && (
+                                  <small style={{ color: '#22c55e' }}>✓ Valid URL - Platform: {getVideoPlatformName(lesson.url)}</small>
                                 )}
-                                {lesson.url && !getYouTubeVideoId(lesson.url) && (
-                                  <small style={{ color: '#ef4444' }}>✗ Invalid YouTube URL</small>
+                                {lesson.url && !isValidVideoUrl(lesson.url) && (
+                                  <small style={{ color: '#ef4444' }}>✗ Invalid URL format</small>
                                 )}
                               </div>
                               <div className="form-field">
@@ -708,6 +745,16 @@ const CreateCourse = ({ user, onLogout }) => {
                                   placeholder="e.g., 15"
                                   value={lesson.duration}
                                   onChange={(e) => updateLesson(lesson.id, 'duration', e.target.value)}
+                                />
+                              </div>
+                              <div className="form-field full-width">
+                                <label>Lesson Description/Notes (Optional)</label>
+                                <textarea
+                                  className="input textarea"
+                                  placeholder="Add notes or key points about this video..."
+                                  value={lesson.content}
+                                  onChange={(e) => updateLesson(lesson.id, 'content', e.target.value)}
+                                  rows={4}
                                 />
                               </div>
                             </>
