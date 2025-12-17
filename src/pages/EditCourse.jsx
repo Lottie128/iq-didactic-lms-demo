@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Upload, Video, Sparkles, LogOut, Trash2, Save } from 'lucide-react';
-import { courseAPI } from '../services/api';
+import { ArrowLeft, Plus, X, Video, Sparkles, LogOut, Trash2, Save } from 'lucide-react';
+import { courseAPI, lessonAPI } from '../services/api';
 import './CreateCourse.css';
 
 const EditCourse = ({ user, onLogout }) => {
@@ -15,13 +15,14 @@ const EditCourse = ({ user, onLogout }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '',
+    category: 'Programming',
     level: 'beginner',
     duration: '',
     price: 0,
     thumbnail: ''
   });
-  const [videos, setVideos] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [originalLessonIds, setOriginalLessonIds] = useState([]);
 
   useEffect(() => {
     console.log('EditCourse: Loading course with ID:', id);
@@ -34,10 +35,8 @@ const EditCourse = ({ user, onLogout }) => {
       setError('');
       
       console.log('EditCourse: Fetching course from API...');
-      const response = await courseAPI.getCourseById(id);
-      console.log('EditCourse: API Response:', response);
-      
-      const course = response.data;
+      const courseResponse = await courseAPI.getCourseById(id);
+      const course = courseResponse.data;
       console.log('EditCourse: Course data:', course);
       
       if (!course) {
@@ -47,38 +46,39 @@ const EditCourse = ({ user, onLogout }) => {
       setFormData({
         title: course.title || '',
         description: course.description || '',
-        category: course.category || '',
+        category: course.category || 'Programming',
         level: course.level || 'beginner',
         duration: course.duration || '',
         price: course.price || 0,
         thumbnail: course.thumbnail || ''
       });
 
-      // Load videos from lessons or videos array
-      if (course.lessons && course.lessons.length > 0) {
-        console.log('EditCourse: Loading lessons:', course.lessons);
-        setVideos(course.lessons.map(l => ({
-          id: l.id,
-          title: l.title,
-          youtubeUrl: l.videoUrl || l.url || '',
-          duration: l.duration || ''
-        })));
-      } else if (course.videos && course.videos.length > 0) {
-        console.log('EditCourse: Loading videos:', course.videos);
-        setVideos(course.videos);
-      } else {
-        console.log('EditCourse: No lessons or videos found');
-        setVideos([]);
-      }
+      // Fetch lessons separately
+      console.log('EditCourse: Fetching lessons for course', id);
+      const lessonsResponse = await lessonAPI.getCourseLessons(id);
+      const lessonsData = lessonsResponse.data || [];
+      console.log('EditCourse: Lessons data:', lessonsData);
+      
+      // Store original lesson IDs to track deletions
+      const lessonIds = lessonsData.map(l => l.id);
+      setOriginalLessonIds(lessonIds);
+      
+      // Map lessons to editable format - IMPORTANT: Create new objects to avoid shared references
+      const editableLessons = lessonsData.map(lesson => ({
+        id: lesson.id,
+        title: lesson.title || '',
+        youtubeUrl: lesson.videoUrl || '',
+        duration: lesson.duration || '',
+        type: lesson.type || 'video',
+        isNew: false // Track if this is an existing lesson
+      }));
+      
+      console.log('EditCourse: Editable lessons:', editableLessons);
+      setLessons(editableLessons);
       
       console.log('EditCourse: Course loaded successfully');
     } catch (error) {
       console.error('EditCourse: Error loading course:', error);
-      console.error('EditCourse: Error details:', {
-        message: error.message,
-        response: error.response,
-        status: error.response?.status
-      });
       setError(`Failed to load course: ${error.message}`);
     } finally {
       setLoading(false);
@@ -92,20 +92,65 @@ const EditCourse = ({ user, onLogout }) => {
     setSaving(true);
 
     try {
-      console.log('EditCourse: Updating course with data:', formData);
+      console.log('EditCourse: Updating course...');
+      
+      // Update course basic info
       await courseAPI.updateCourse(id, {
-        ...formData,
-        videos: videos.map(v => ({
-          title: v.title,
-          url: v.youtubeUrl,
-          duration: v.duration
-        }))
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        level: formData.level,
+        duration: formData.duration,
+        price: formData.price,
+        thumbnail: formData.thumbnail
       });
+      console.log('EditCourse: Course updated');
+
+      // Handle lessons
+      const currentLessonIds = lessons.filter(l => !l.isNew).map(l => l.id);
+      
+      // Delete removed lessons
+      const deletedLessonIds = originalLessonIds.filter(id => !currentLessonIds.includes(id));
+      for (const lessonId of deletedLessonIds) {
+        try {
+          console.log('EditCourse: Deleting lesson', lessonId);
+          await lessonAPI.deleteLesson(lessonId);
+        } catch (err) {
+          console.error('EditCourse: Error deleting lesson', lessonId, err);
+        }
+      }
+
+      // Update existing lessons and create new ones
+      for (let i = 0; i < lessons.length; i++) {
+        const lesson = lessons[i];
+        const lessonData = {
+          courseId: parseInt(id),
+          title: lesson.title,
+          type: lesson.type || 'video',
+          videoUrl: lesson.youtubeUrl,
+          duration: parseInt(lesson.duration) || 0,
+          order: i + 1
+        };
+
+        try {
+          if (lesson.isNew) {
+            // Create new lesson
+            console.log('EditCourse: Creating new lesson', lessonData);
+            await lessonAPI.createLesson(lessonData);
+          } else {
+            // Update existing lesson
+            console.log('EditCourse: Updating lesson', lesson.id, lessonData);
+            await lessonAPI.updateLesson(lesson.id, lessonData);
+          }
+        } catch (err) {
+          console.error('EditCourse: Error saving lesson', lesson, err);
+        }
+      }
 
       setSuccess('Course updated successfully!');
       setTimeout(() => {
         navigate(`/course/${id}`);
-      }, 2000);
+      }, 1500);
     } catch (error) {
       console.error('EditCourse: Error updating course:', error);
       setError(error.message || 'Failed to update course');
@@ -127,16 +172,34 @@ const EditCourse = ({ user, onLogout }) => {
     }
   };
 
-  const addVideo = () => {
-    setVideos([...videos, { id: Date.now(), title: '', youtubeUrl: '', duration: '' }]);
+  const addLesson = () => {
+    const newLesson = {
+      id: `new_${Date.now()}`, // Temporary ID for new lessons
+      title: '',
+      youtubeUrl: '',
+      duration: '',
+      type: 'video',
+      isNew: true
+    };
+    console.log('EditCourse: Adding new lesson', newLesson);
+    setLessons([...lessons, newLesson]);
   };
 
-  const removeVideo = (id) => {
-    setVideos(videos.filter(v => v.id !== id));
+  const removeLesson = (lessonId) => {
+    console.log('EditCourse: Removing lesson', lessonId);
+    setLessons(lessons.filter(l => l.id !== lessonId));
   };
 
-  const updateVideo = (id, field, value) => {
-    setVideos(videos.map(v => v.id === id ? { ...v, [field]: value } : v));
+  const updateLesson = (lessonId, field, value) => {
+    console.log('EditCourse: Updating lesson', lessonId, field, value);
+    // CRITICAL: Map creates NEW objects, preventing shared state bug
+    setLessons(prevLessons => 
+      prevLessons.map(lesson => 
+        lesson.id === lessonId 
+          ? { ...lesson, [field]: value } 
+          : lesson
+      )
+    );
   };
 
   if (loading) {
@@ -198,13 +261,13 @@ const EditCourse = ({ user, onLogout }) => {
       <main className="create-course-main fade-in">
         {error && formData.title && (
           <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px' }}>
-            {error}
+            ⚠️ {error}
           </div>
         )}
 
         {success && (
           <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px' }}>
-            {success}
+            ✅ {success}
           </div>
         )}
 
@@ -283,7 +346,7 @@ const EditCourse = ({ user, onLogout }) => {
                   type="number"
                   placeholder="0 for free"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                 />
               </div>
 
@@ -302,51 +365,52 @@ const EditCourse = ({ user, onLogout }) => {
 
           <section className="form-section glass-strong">
             <div className="section-header">
-              <h3>Course Content</h3>
-              <button type="button" className="btn btn-secondary" onClick={addVideo}>
+              <h3>Course Lessons ({lessons.length})</h3>
+              <button type="button" className="btn btn-secondary" onClick={addLesson}>
                 <Plus size={16} />
-                Add Video
+                Add Lesson
               </button>
             </div>
 
-            {videos.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', opacity: 0.6 }}>
+            {lessons.length === 0 ? (
+              <div style={{ padding: '30px', textAlign: 'center', opacity: 0.6 }}>
+                <Video size={48} style={{ margin: '0 auto 15px', opacity: 0.3 }} />
                 <p>No lessons yet. Add video lessons to your course.</p>
               </div>
             ) : (
               <div className="videos-list">
-                {videos.map((video, index) => (
-                  <div key={video.id} className="video-item glass">
+                {lessons.map((lesson, index) => (
+                  <div key={lesson.id} className="video-item glass">
                     <div className="video-header">
                       <div className="video-number">
                         <Video size={16} />
-                        <span>Lesson {index + 1}</span>
+                        <span>Lesson {index + 1} {lesson.isNew && '(New)'}</span>
                       </div>
-                      {videos.length > 1 && (
-                        <button type="button" className="btn-icon-small" onClick={() => removeVideo(video.id)}>
-                          <X size={16} />
-                        </button>
-                      )}
+                      <button type="button" className="btn-icon-small" onClick={() => removeLesson(lesson.id)}>
+                        <X size={16} />
+                      </button>
                     </div>
                     <div className="video-fields">
                       <div className="form-field full-width">
-                        <label>Video Title</label>
+                        <label>Lesson Title *</label>
                         <input
                           className="input"
                           type="text"
-                          placeholder="Lesson title"
-                          value={video.title}
-                          onChange={(e) => updateVideo(video.id, 'title', e.target.value)}
+                          placeholder="Enter lesson title"
+                          value={lesson.title}
+                          onChange={(e) => updateLesson(lesson.id, 'title', e.target.value)}
+                          required
                         />
                       </div>
                       <div className="form-field">
-                        <label>YouTube URL</label>
+                        <label>YouTube URL *</label>
                         <input
                           className="input"
                           type="url"
                           placeholder="https://www.youtube.com/watch?v=..."
-                          value={video.youtubeUrl}
-                          onChange={(e) => updateVideo(video.id, 'youtubeUrl', e.target.value)}
+                          value={lesson.youtubeUrl}
+                          onChange={(e) => updateLesson(lesson.id, 'youtubeUrl', e.target.value)}
+                          required
                         />
                       </div>
                       <div className="form-field">
@@ -355,8 +419,8 @@ const EditCourse = ({ user, onLogout }) => {
                           className="input"
                           type="number"
                           placeholder="e.g., 15"
-                          value={video.duration}
-                          onChange={(e) => updateVideo(video.id, 'duration', e.target.value)}
+                          value={lesson.duration}
+                          onChange={(e) => updateLesson(lesson.id, 'duration', e.target.value)}
                         />
                       </div>
                     </div>
