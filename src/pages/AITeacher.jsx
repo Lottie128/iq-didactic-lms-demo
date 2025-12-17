@@ -9,7 +9,7 @@ const AITeacher = ({ user, onLogout }) => {
     {
       id: 1,
       role: 'ai',
-      text: 'Hello! I am your AI Teacher assistant powered by Google Gemini. I can help you with lesson planning, quiz generation, course outlines, and answering questions. How can I assist you today?'
+      text: 'Hello! I am your AI Teacher assistant powered by Llama 3.3 70B. I can help you with lesson planning, quiz generation, course outlines, and answering questions. How can I assist you today?'
     }
   ]);
   const [input, setInput] = useState('');
@@ -54,11 +54,11 @@ const AITeacher = ({ user, onLogout }) => {
       if (response.ok) {
         const { data } = await response.json();
         
-        // Backend returns data.response
+        // Backend returns data.response or data.answer
         const aiMessage = {
           id: messages.length + 2,
           role: 'ai',
-          text: data.response || 'I received your message but could not generate a response.'
+          text: data.answer || data.response || 'I received your message but could not generate a response.'
         };
         
         setMessages(prev => [...prev, aiMessage]);
@@ -73,7 +73,7 @@ const AITeacher = ({ user, onLogout }) => {
       const errorMessage = {
         id: messages.length + 2,
         role: 'ai',
-        text: `I apologize, but I'm having trouble connecting right now. ${error.message.includes('API') ? 'Please make sure the Gemini API key is configured.' : 'Please try again in a moment.'}`
+        text: `I apologize, but I'm having trouble connecting right now. ${error.message.includes('API') || error.message.includes('key') ? 'Please make sure the AI API is configured properly.' : 'Please try again in a moment.'}`
       };
       
       setMessages(prev => [...prev, errorMessage]);
@@ -97,7 +97,7 @@ const AITeacher = ({ user, onLogout }) => {
           </button>
           <div className="header-title">
             <h2>AI Teacher</h2>
-            <p>Powered by Google Gemini 2.0 Flash</p>
+            <p>Powered by Llama 3.3 70B via Groq</p>
           </div>
         </div>
         <nav className="header-nav">
