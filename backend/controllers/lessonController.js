@@ -10,7 +10,7 @@ exports.getAllLessons = async (req, res, next) => {
     const lessons = await Lesson.findAll({
       where: { courseId },
       order: [['order', 'ASC'], ['createdAt', 'ASC']],
-      attributes: ['id', 'title', 'description', 'videoUrl', 'duration', 'order', 'published', 'resources']
+      attributes: ['id', 'title', 'description', 'type', 'videoUrl', 'duration', 'order', 'published', 'resources']
     });
 
     res.status(200).json({
@@ -72,7 +72,7 @@ exports.getLessonById = async (req, res, next) => {
 // @access  Private (Teacher, Admin)
 exports.createLesson = async (req, res, next) => {
   try {
-    const { courseId, title, description, videoUrl, duration, order, published, resources } = req.body;
+    const { courseId, title, description, type, videoUrl, duration, order, published, resources } = req.body;
 
     // Check if course exists and user owns it (or is admin)
     const course = await Course.findByPk(courseId);
@@ -105,10 +105,11 @@ exports.createLesson = async (req, res, next) => {
       courseId,
       title,
       description,
+      type: type || 'video',
       videoUrl,
       duration,
       order: lessonOrder,
-      published: published || false,
+      published: published !== undefined ? published : true,
       resources: resources || []
     });
 
@@ -118,6 +119,7 @@ exports.createLesson = async (req, res, next) => {
       data: lesson
     });
   } catch (error) {
+    console.error('Error creating lesson:', error);
     next(error);
   }
 };
@@ -146,11 +148,12 @@ exports.updateLesson = async (req, res, next) => {
       });
     }
 
-    const { title, description, videoUrl, duration, order, published, resources } = req.body;
+    const { title, description, type, videoUrl, duration, order, published, resources } = req.body;
 
     // Update fields
     if (title !== undefined) lesson.title = title;
     if (description !== undefined) lesson.description = description;
+    if (type !== undefined) lesson.type = type;
     if (videoUrl !== undefined) lesson.videoUrl = videoUrl;
     if (duration !== undefined) lesson.duration = duration;
     if (order !== undefined) lesson.order = order;
@@ -165,6 +168,7 @@ exports.updateLesson = async (req, res, next) => {
       data: lesson
     });
   } catch (error) {
+    console.error('Error updating lesson:', error);
     next(error);
   }
 };
