@@ -92,7 +92,49 @@ const User = sequelize.define('User', {
   }
 }, {
   tableName: 'users',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      // Email is already unique, but explicit index for faster lookups
+      fields: ['email'],
+      name: 'users_email_idx'
+    },
+    {
+      // Role-based queries (get all teachers, students, etc.)
+      fields: ['role'],
+      name: 'users_role_idx'
+    },
+    {
+      // Active user filtering
+      fields: ['isActive'],
+      name: 'users_is_active_idx'
+    },
+    {
+      // Composite index for role + active status (common query pattern)
+      fields: ['role', 'isActive'],
+      name: 'users_role_active_idx'
+    },
+    {
+      // Last login tracking and activity reports
+      fields: ['lastLogin'],
+      name: 'users_last_login_idx'
+    },
+    {
+      // Leaderboard and gamification queries
+      fields: ['xp'],
+      name: 'users_xp_idx'
+    },
+    {
+      // Level-based queries
+      fields: ['level'],
+      name: 'users_level_idx'
+    },
+    {
+      // Created at for user registration reports
+      fields: ['createdAt'],
+      name: 'users_created_at_idx'
+    }
+  ]
 });
 
 module.exports = User;
