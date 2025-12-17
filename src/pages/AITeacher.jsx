@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Send, LogOut } from 'lucide-react';
+import { ArrowLeft, Sparkles, Send, LogOut, Loader } from 'lucide-react';
 import './AITeacher.css';
 
 const AITeacher = ({ user, onLogout }) => {
@@ -9,14 +9,15 @@ const AITeacher = ({ user, onLogout }) => {
     {
       id: 1,
       role: 'ai',
-      text: 'Hello! I am your AI Teacher assistant. I can help you with lesson planning, quiz generation, course outlines, and answering questions. How can I assist you today?'
+      text: 'Hello! I am your AI Teacher assistant powered by Google Gemini. I can help you with lesson planning, quiz generation, course outlines, and answering questions. How can I assist you today?'
     }
   ]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
     const userMessage = {
       id: messages.length + 1,
@@ -25,17 +26,56 @@ const AITeacher = ({ user, onLogout }) => {
     };
 
     setMessages([...messages, userMessage]);
+    const question = input;
     setInput('');
+    setLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage = {
+    try {
+      // Call real AI API
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://iq-didactic-lms-demo-production.up.railway.app/api';
+      
+      const response = await fetch(`${apiUrl}/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ question })
+      });
+
+      if (response.ok) {
+        const { data } = await response.json();
+        
+        const aiMessage = {
+          id: messages.length + 2,
+          role: 'ai',
+          text: data.answer
+        };
+        
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to get AI response');
+      }
+    } catch (error) {
+      console.error('AI Chat Error:', error);
+      
+      // Show error message
+      const errorMessage = {
         id: messages.length + 2,
         role: 'ai',
-        text: `Great question! Since this is a demo, I am showing a simulated response. In production, I would use advanced AI to help you with "${input}". This could include generating lesson plans, creating quiz questions, suggesting learning paths, or explaining complex topics in simple terms.`
+        text: `I apologize, but I encountered an error: ${error.message}. Please make sure the Gemini API key is configured in the backend environment variables.`
       };
-      setMessages(prev => [...prev, aiMessage]);
-    }, 1000);
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSuggestion = (suggestion) => {
+    setInput(suggestion);
   };
 
   return (
@@ -49,7 +89,7 @@ const AITeacher = ({ user, onLogout }) => {
           </button>
           <div className="header-title">
             <h2>AI Teacher</h2>
-            <p>Your intelligent learning assistant</p>
+            <p>Powered by Google Gemini</p>
           </div>
         </div>
         <nav className="header-nav">
@@ -74,7 +114,7 @@ const AITeacher = ({ user, onLogout }) => {
               <h3>IQ Didactic AI</h3>
               <p className="ai-status">
                 <span className="status-dot" />
-                Online and ready
+                {loading ? 'Thinking...' : 'Online and ready'}
               </p>
             </div>
           </div>
@@ -88,7 +128,7 @@ const AITeacher = ({ user, onLogout }) => {
                   </div>
                 )}
                 <div className="message-bubble glass">
-                  <p>{msg.text}</p>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
                 </div>
                 {msg.role === 'user' && (
                   <div className="message-avatar user-avatar">
@@ -97,6 +137,20 @@ const AITeacher = ({ user, onLogout }) => {
                 )}
               </div>
             ))}
+            
+            {loading && (
+              <div className="message ai">
+                <div className="message-avatar">
+                  <Sparkles size={16} />
+                </div>
+                <div className="message-bubble glass">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Loader size={16} className="spin" />
+                    <span>Thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <form className="ai-input-form" onSubmit={handleSend}>
@@ -107,9 +161,10 @@ const AITeacher = ({ user, onLogout }) => {
                 placeholder="Ask me anything about learning, courses, or teaching..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                disabled={loading}
               />
-              <button type="submit" className="send-btn" disabled={!input.trim()}>
-                <Send size={18} />
+              <button type="submit" className="send-btn" disabled={!input.trim() || loading}>
+                {loading ? <Loader size={18} className="spin" /> : <Send size={18} />}
               </button>
             </div>
           </form>
@@ -117,13 +172,25 @@ const AITeacher = ({ user, onLogout }) => {
           <div className="ai-suggestions">
             <p>Try asking:</p>
             <div className="suggestions-grid">
-              <button className="suggestion-chip glass" onClick={() => setInput('Create a quiz on machine learning basics')}>
+              <button 
+                className="suggestion-chip glass" 
+                onClick={() => handleSuggestion('Create 5 quiz questions on machine learning basics')}
+                disabled={loading}
+              >
                 Create a quiz
               </button>
-              <button className="suggestion-chip glass" onClick={() => setInput('Explain neural networks in simple terms')}>
+              <button 
+                className="suggestion-chip glass" 
+                onClick={() => handleSuggestion('Explain neural networks in simple terms')}
+                disabled={loading}
+              >
                 Explain a concept
               </button>
-              <button className="suggestion-chip glass" onClick={() => setInput('Generate a course outline for React development')}>
+              <button 
+                className="suggestion-chip glass" 
+                onClick={() => handleSuggestion('Generate a course outline for React development')}
+                disabled={loading}
+              >
                 Course outline
               </button>
             </div>
