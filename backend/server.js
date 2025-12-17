@@ -6,6 +6,7 @@ const path = require('path');
 require('dotenv').config();
 
 const { sequelize, testConnection, syncDatabase } = require('./config/db');
+const seedDatabase = require('./seed');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const courseRoutes = require('./routes/courses');
@@ -131,7 +132,7 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/ai', aiRoutes); // ✅ AI Routes Added
+app.use('/api/ai', aiRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
@@ -190,7 +191,7 @@ const runMigrations = async () => {
           console.log(`⏭️  Migration already applied: ${file}`);
         } else {
           console.error(`❌ Migration failed: ${file}`);
-          throw error; // Re-throw to stop server startup
+          throw error;
         }
       }
     }
@@ -229,6 +230,23 @@ const startServer = async () => {
     if (!syncSuccess) {
       console.error('❌ Database sync failed. Exiting...');
       process.exit(1);
+    }
+
+    // Seed database with dummy data (only if database is empty)
+    try {
+      const { User } = require('./models');
+      const userCount = await User.count();
+      
+      if (userCount === 0) {
+        console.log('🌱 Database is empty. Seeding with demo data...');
+        await seedDatabase();
+        console.log('✅ Demo data seeded successfully!');
+      } else {
+        console.log('ℹ️  Database already has data. Skipping seed.');
+      }
+    } catch (seedError) {
+      console.error('⚠️  Seed error (non-critical):', seedError.message);
+      // Don't exit on seed error - it's not critical
     }
 
     // Start server
