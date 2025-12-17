@@ -3,27 +3,30 @@ module.exports = {
     console.log('🔥 FORCE DROPPING ALL TABLES...');
     
     try {
-      // Drop all tables in reverse dependency order
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "progress" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "quiz_attempts" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "questions" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "quizzes" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "lessons" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "reviews" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "enrollments" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "courses" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "notifications" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "achievements" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "certificates" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "discussions" CASCADE;');
-      await queryInterface.sequelize.query('DROP TABLE IF EXISTS "users" CASCADE;');
+      // Disable foreign key checks temporarily
+      await queryInterface.sequelize.query('SET session_replication_role = replica;');
+      
+      // Drop all tables
+      await queryInterface.sequelize.query('DROP SCHEMA public CASCADE;');
+      await queryInterface.sequelize.query('CREATE SCHEMA public;');
+      await queryInterface.sequelize.query('GRANT ALL ON SCHEMA public TO postgres;');
+      await queryInterface.sequelize.query('GRANT ALL ON SCHEMA public TO public;');
+      
+      // Re-enable foreign key checks
+      await queryInterface.sequelize.query('SET session_replication_role = DEFAULT;');
       
       console.log('✅ All tables dropped successfully');
       console.log('⚠️  All data has been wiped!');
       console.log('🔄 Sequelize will now recreate tables with INTEGER IDs');
     } catch (error) {
       console.error('Error dropping tables:', error.message);
-      // Continue anyway - tables might not exist
+      // Try to re-enable foreign keys even if error
+      try {
+        await queryInterface.sequelize.query('SET session_replication_role = DEFAULT;');
+      } catch (e) {
+        // ignore
+      }
+      throw error;
     }
   },
 
