@@ -46,7 +46,34 @@ const Lesson = sequelize.define('Lesson', {
   }
 }, {
   tableName: 'lessons',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      // Course lessons lookup (most common query)
+      fields: ['courseId'],
+      name: 'lessons_course_id_idx'
+    },
+    {
+      // Composite: courseId + order (for ordered lesson lists)
+      fields: ['courseId', 'order'],
+      name: 'lessons_course_id_order_idx'
+    },
+    {
+      // Composite: courseId + published (show only published lessons)
+      fields: ['courseId', 'published'],
+      name: 'lessons_course_id_published_idx'
+    },
+    {
+      // Published status filtering
+      fields: ['published'],
+      name: 'lessons_published_idx'
+    },
+    {
+      // Lesson type filtering
+      fields: ['type'],
+      name: 'lessons_type_idx'
+    }
+  ]
 });
 
 module.exports = Lesson;
