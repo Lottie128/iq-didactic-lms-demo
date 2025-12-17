@@ -41,16 +41,24 @@ const AITeacher = ({ user, onLogout }) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ 
+          message: question,
+          context: {
+            courseName: 'General',
+            studentLevel: user?.level || 1,
+            topic: 'General Education'
+          }
+        })
       });
 
       if (response.ok) {
         const { data } = await response.json();
         
+        // Backend returns data.response, not data.answer
         const aiMessage = {
           id: messages.length + 2,
           role: 'ai',
-          text: data.answer
+          text: data.response || data.answer || 'I received your message but could not generate a response.'
         };
         
         setMessages(prev => [...prev, aiMessage]);
@@ -61,11 +69,11 @@ const AITeacher = ({ user, onLogout }) => {
     } catch (error) {
       console.error('AI Chat Error:', error);
       
-      // Show error message
+      // Show user-friendly error message
       const errorMessage = {
         id: messages.length + 2,
         role: 'ai',
-        text: `I apologize, but I encountered an error: ${error.message}. Please make sure the Gemini API key is configured in the backend environment variables.`
+        text: `I apologize, but I'm having trouble connecting right now. ${error.message.includes('API') ? 'Please make sure the Gemini API key is configured.' : 'Please try again in a moment.'}`
       };
       
       setMessages(prev => [...prev, errorMessage]);
@@ -89,7 +97,7 @@ const AITeacher = ({ user, onLogout }) => {
           </button>
           <div className="header-title">
             <h2>AI Teacher</h2>
-            <p>Powered by Google Gemini</p>
+            <p>Powered by Google Gemini 2.0 Flash</p>
           </div>
         </div>
         <nav className="header-nav">
