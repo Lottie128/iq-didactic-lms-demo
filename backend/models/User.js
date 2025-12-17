@@ -30,6 +30,12 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('student', 'teacher', 'admin'),
     defaultValue: 'student'
   },
+  verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false,
+    comment: 'For teacher verification - students and admins are auto-verified'
+  },
   avatar: {
     type: DataTypes.STRING,
     allowNull: true
@@ -103,12 +109,20 @@ const User = sequelize.define('User', {
       name: 'users_role_idx'
     },
     {
+      fields: ['verified'],
+      name: 'users_verified_idx'
+    },
+    {
       fields: ['isActive'],
       name: 'users_is_active_idx'
     },
     {
       fields: ['role', 'isActive'],
       name: 'users_role_active_idx'
+    },
+    {
+      fields: ['role', 'verified'],
+      name: 'users_role_verified_idx'
     },
     {
       fields: ['lastLogin'],
