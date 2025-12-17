@@ -17,7 +17,13 @@ const Lesson = sequelize.define('Lesson', {
   },
   description: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    comment: 'Short description shown in playlist'
+  },
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    comment: 'Full content/article displayed below video player - supports Markdown'
   },
   type: {
     type: DataTypes.ENUM('video', 'text', 'image'),
@@ -26,11 +32,18 @@ const Lesson = sequelize.define('Lesson', {
   },
   videoUrl: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    comment: 'Supports YouTube, Vimeo, S3, any streaming platform URL'
+  },
+  videoPlatform: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'Auto-detected: youtube, vimeo, s3, custom, etc.'
   },
   duration: {
     type: DataTypes.INTEGER,
-    comment: 'Duration in seconds'
+    comment: 'Duration in minutes',
+    defaultValue: 0
   },
   order: {
     type: DataTypes.INTEGER,
@@ -38,38 +51,39 @@ const Lesson = sequelize.define('Lesson', {
   },
   published: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: true
+  },
+  thumbnail: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    comment: 'Lesson thumbnail - can be base64 or URL'
   },
   resources: {
     type: DataTypes.JSONB,
-    defaultValue: []
+    defaultValue: [],
+    comment: 'Additional downloadable resources for this lesson'
   }
 }, {
   tableName: 'lessons',
   timestamps: true,
   indexes: [
     {
-      // Course lessons lookup (most common query)
       fields: ['courseId'],
       name: 'lessons_course_id_idx'
     },
     {
-      // Composite: courseId + order (for ordered lesson lists)
       fields: ['courseId', 'order'],
       name: 'lessons_course_id_order_idx'
     },
     {
-      // Composite: courseId + published (show only published lessons)
       fields: ['courseId', 'published'],
       name: 'lessons_course_id_published_idx'
     },
     {
-      // Published status filtering
       fields: ['published'],
       name: 'lessons_published_idx'
     },
     {
-      // Lesson type filtering
       fields: ['type'],
       name: 'lessons_type_idx'
     }
