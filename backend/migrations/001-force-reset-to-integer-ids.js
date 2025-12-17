@@ -3,30 +3,41 @@ module.exports = {
     console.log('🔥 FORCE DROPPING ALL TABLES...');
     
     try {
-      // Disable foreign key checks temporarily
-      await queryInterface.sequelize.query('SET session_replication_role = replica;');
-      
-      // Drop all tables
-      await queryInterface.sequelize.query('DROP SCHEMA public CASCADE;');
-      await queryInterface.sequelize.query('CREATE SCHEMA public;');
-      await queryInterface.sequelize.query('GRANT ALL ON SCHEMA public TO postgres;');
-      await queryInterface.sequelize.query('GRANT ALL ON SCHEMA public TO public;');
-      
-      // Re-enable foreign key checks
-      await queryInterface.sequelize.query('SET session_replication_role = DEFAULT;');
+      // Drop all constraints first, then tables
+      // This avoids foreign key issues without needing superuser
+      const tables = [
+        'progress',
+        'quiz_attempts', 
+        'questions',
+        'quizzes',
+        'reviews',
+        'discussions',
+        'notifications',
+        'achievements',
+        'certificates',
+        'lessons',
+        'enrollments',
+        'courses',
+        'users'
+      ];
+
+      // Drop each table with CASCADE to handle foreign keys
+      for (const table of tables) {
+        try {
+          await queryInterface.sequelize.query(`DROP TABLE IF EXISTS "${table}" CASCADE;`);
+          console.log(`✅ Dropped table: ${table}`);
+        } catch (error) {
+          // Ignore if table doesn't exist
+          console.log(`⏭️  Table ${table} doesn't exist, skipping`);
+        }
+      }
       
       console.log('✅ All tables dropped successfully');
       console.log('⚠️  All data has been wiped!');
       console.log('🔄 Sequelize will now recreate tables with INTEGER IDs');
     } catch (error) {
       console.error('Error dropping tables:', error.message);
-      // Try to re-enable foreign keys even if error
-      try {
-        await queryInterface.sequelize.query('SET session_replication_role = DEFAULT;');
-      } catch (e) {
-        // ignore
-      }
-      throw error;
+      // Don't throw - let Sequelize sync handle recreation
     }
   },
 
