@@ -42,7 +42,7 @@ const AITeacher = ({ user, onLogout }) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          message: question,
+          question: question,  // Backend expects 'question' field
           context: {
             courseName: 'General',
             studentLevel: user?.level || 1,
@@ -54,11 +54,11 @@ const AITeacher = ({ user, onLogout }) => {
       if (response.ok) {
         const { data } = await response.json();
         
-        // Backend returns data.response, not data.answer
+        // Backend returns data.response
         const aiMessage = {
           id: messages.length + 2,
           role: 'ai',
-          text: data.response || data.answer || 'I received your message but could not generate a response.'
+          text: data.response || 'I received your message but could not generate a response.'
         };
         
         setMessages(prev => [...prev, aiMessage]);
