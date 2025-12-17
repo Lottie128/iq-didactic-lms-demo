@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const { sequelize, testConnection, syncDatabase } = require('./config/db');
@@ -95,6 +97,49 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+// Run migrations
+const runMigrations = async () => {
+  try {
+    console.log('🔄 Running migrations...');
+
+    // Get all migration files
+    const migrationsDir = path.join(__dirname, 'migrations');
+    
+    // Check if migrations directory exists
+    if (!fs.existsSync(migrationsDir)) {
+      console.log('ℹ️  No migrations directory found, skipping migrations');
+      return;
+    }
+
+    const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.js')).sort();
+    console.log(`Found ${files.length} migration files`);
+
+    // Run each migration
+    for (const file of files) {
+      console.log(`📝 Running migration: ${file}`);
+      const migration = require(path.join(migrationsDir, file));
+      
+      try {
+        await migration.up(sequelize.getQueryInterface(), sequelize.Sequelize);
+        console.log(`✅ Migration completed: ${file}`);
+      } catch (error) {
+        if (error.message.includes('already exists') || 
+            error.message.includes('duplicate') ||
+            error.message.includes('does not exist')) {
+          console.log(`⏭️  Migration already applied or column exists: ${file}`);
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    console.log('✨ All migrations completed successfully!');
+  } catch (error) {
+    console.error('❌ Migration failed:', error.message);
+    // Don't exit - let the server start anyway
+  }
+};
+
 // Initialize server
 const startServer = async () => {
   try {
@@ -104,6 +149,9 @@ const startServer = async () => {
       console.error('Failed to connect to database. Exiting...');
       process.exit(1);
     }
+
+    // Run migrations BEFORE syncing database
+    await runMigrations();
 
     // Sync database
     await syncDatabase();
