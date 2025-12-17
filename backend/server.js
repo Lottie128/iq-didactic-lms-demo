@@ -19,6 +19,7 @@ const achievementRoutes = require('./routes/achievements');
 const certificateRoutes = require('./routes/certificates');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
 const aiRoutes = require('./routes/ai');
 const errorHandler = require('./middleware/errorHandler');
 const { createRateLimiter } = require('./middleware/rateLimiter');
@@ -27,7 +28,7 @@ const app = express();
 
 // CORS configuration - PERMISSIVE for demo
 const corsOptions = {
-  origin: true, // Allow all origins for demo
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -99,6 +100,7 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai', aiRoutes);
 
 // Error handling middleware
