@@ -1,10 +1,23 @@
+// MIGRATION DISABLED AFTER FIRST RUN
+// This migration was needed ONCE to convert from UUID to INTEGER
+// Now it checks if tables exist before dropping
+
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    console.log('🔥 FORCE DROPPING ALL TABLES...');
-    
     try {
-      // Drop all constraints first, then tables
-      // This avoids foreign key issues without needing superuser
+      // Check if users table exists with INTEGER id
+      const [results] = await queryInterface.sequelize.query(
+        `SELECT data_type FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'id';`
+      );
+      
+      // If users table has integer ID, skip migration
+      if (results.length > 0 && results[0].data_type === 'integer') {
+        console.log('✅ Migration already applied: Tables have INTEGER IDs');
+        return;
+      }
+      
+      console.log('🔄 First run detected: Converting UUID to INTEGER...');
+      
       const tables = [
         'progress',
         'quiz_attempts', 
@@ -21,28 +34,22 @@ module.exports = {
         'users'
       ];
 
-      // Drop each table with CASCADE to handle foreign keys
       for (const table of tables) {
         try {
           await queryInterface.sequelize.query(`DROP TABLE IF EXISTS "${table}" CASCADE;`);
-          console.log(`✅ Dropped table: ${table}`);
+          console.log(`✅ Dropped: ${table}`);
         } catch (error) {
-          // Ignore if table doesn't exist
-          console.log(`⏭️  Table ${table} doesn't exist, skipping`);
+          console.log(`⏭️  Skip: ${table}`);
         }
       }
       
-      console.log('✅ All tables dropped successfully');
-      console.log('⚠️  All data has been wiped!');
-      console.log('🔄 Sequelize will now recreate tables with INTEGER IDs');
+      console.log('✅ Migration completed - tables will be recreated with INTEGER IDs');
     } catch (error) {
-      console.error('Error dropping tables:', error.message);
-      // Don't throw - let Sequelize sync handle recreation
+      console.error('Migration error:', error.message);
     }
   },
 
   down: async (queryInterface, Sequelize) => {
-    // No rollback - this is a destructive migration
-    console.log('⚠️  This migration cannot be rolled back');
+    console.log('⚠️  Cannot rollback');
   }
 };
