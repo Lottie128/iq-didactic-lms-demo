@@ -1,7 +1,8 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize Gemini AI client
+// The client automatically picks up GEMINI_API_KEY from environment variables
+const ai = new GoogleGenAI({});
 
 /**
  * Generate quiz questions using Gemini AI
@@ -13,8 +14,6 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 async function generateQuizQuestions(courseTitle, courseDescription, lessonContent = '', questionCount = 5) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
     const prompt = `You are an expert educator creating quiz questions for an online course.
 
 Course Title: ${courseTitle}
@@ -26,7 +25,7 @@ Generate ${questionCount} multiple-choice quiz questions that test understanding
 For each question, provide:
 1. The question text
 2. Four answer options (A, B, C, D)
-3. The correct answer (A, B, C, or D)
+3. The correct answer (0 for A, 1 for B, 2 for C, 3 for D)
 4. A brief explanation of why the answer is correct
 
 Format your response as valid JSON array like this:
@@ -41,9 +40,13 @@ Format your response as valid JSON array like this:
 
 IMPORTANT: Return ONLY the JSON array, no additional text or markdown formatting.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Use gemini-2.5-flash model (latest and fastest)
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt
+    });
+
+    const text = response.text;
 
     // Clean up the response - remove markdown code blocks if present
     let cleanedText = text.trim();
@@ -76,28 +79,30 @@ IMPORTANT: Return ONLY the JSON array, no additional text or markdown formatting
  * Generate lesson content suggestions using Gemini AI
  * @param {string} lessonTitle - Lesson title
  * @param {string} courseContext - Course context
- * @returns {Promise<string>} Generated content
+ * @returns {Promise<string>} Generated content in Markdown
  */
 async function generateLessonContent(lessonTitle, courseContext) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
     const prompt = `You are an expert educator creating lesson content for an online course.
 
 Lesson Title: ${lessonTitle}
 Course Context: ${courseContext}
 
 Generate comprehensive, educational content for this lesson. Include:
-- Introduction
-- Key concepts
-- Examples
-- Summary
+- Introduction (what students will learn)
+- Key concepts (2-3 main points)
+- Detailed explanations
+- Practical examples
+- Summary and key takeaways
 
-Format the content in Markdown for easy reading.`;
+Format the content in Markdown for easy reading. Make it engaging and educational.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt
+    });
+
+    return response.text;
 
   } catch (error) {
     console.error('Gemini AI Error:', error);
@@ -113,15 +118,26 @@ Format the content in Markdown for easy reading.`;
  */
 async function chatWithAI(question, context = '') {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
     const prompt = context 
-      ? `You are a helpful AI teacher assistant. Context: ${context}\n\nStudent Question: ${question}\n\nProvide a clear, educational response.`
-      : `You are a helpful AI teacher assistant.\n\nStudent Question: ${question}\n\nProvide a clear, educational response.`;
+      ? `You are a helpful AI teacher assistant helping students with their studies.
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+Context: ${context}
+
+Student Question: ${question}
+
+Provide a clear, educational, and encouraging response. Be concise but thorough.`
+      : `You are a helpful AI teacher assistant.
+
+Student Question: ${question}
+
+Provide a clear, educational, and encouraging response.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt
+    });
+
+    return response.text;
 
   } catch (error) {
     console.error('Gemini AI Error:', error);
@@ -129,8 +145,62 @@ async function chatWithAI(question, context = '') {
   }
 }
 
+/**
+ * Generate course outline/curriculum
+ * @param {string} courseTitle - Course title
+ * @param {string} courseDescription - Course description
+ * @param {number} lessonCount - Number of lessons to generate
+ * @returns {Promise<Array>} Array of lesson titles and descriptions
+ */
+async function generateCourseOutline(courseTitle, courseDescription, lessonCount = 10) {
+  try {
+    const prompt = `You are an expert curriculum designer for online courses.
+
+Course Title: ${courseTitle}
+Course Description: ${courseDescription}
+
+Generate a comprehensive course outline with ${lessonCount} lessons.
+
+For each lesson, provide:
+1. Lesson title
+2. Brief description (2-3 sentences)
+3. Key learning objectives
+
+Format as JSON array:
+[
+  {
+    "title": "Lesson Title",
+    "description": "Brief description",
+    "objectives": ["Objective 1", "Objective 2"]
+  }
+]
+
+IMPORTANT: Return ONLY the JSON array.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt
+    });
+
+    const text = response.text;
+    let cleanedText = text.trim();
+    if (cleanedText.startsWith('```json')) {
+      cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText.replace(/```\n?/g, '');
+    }
+
+    return JSON.parse(cleanedText);
+
+  } catch (error) {
+    console.error('Gemini AI Error:', error);
+    throw new Error(`Failed to generate course outline: ${error.message}`);
+  }
+}
+
 module.exports = {
   generateQuizQuestions,
   generateLessonContent,
-  chatWithAI
+  chatWithAI,
+  generateCourseOutline
 };
