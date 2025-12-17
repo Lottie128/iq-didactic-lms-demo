@@ -63,10 +63,11 @@ const EditCourse = ({ user, onLogout }) => {
       const lessonIds = lessonsData.map(l => l.id);
       setOriginalLessonIds(lessonIds);
       
-      // Map lessons to editable format - IMPORTANT: Create new objects to avoid shared references
+      // Map lessons to editable format
       const editableLessons = lessonsData.map(lesson => ({
         id: lesson.id,
         title: lesson.title || '',
+        content: lesson.content || '',
         youtubeUrl: lesson.videoUrl || '',
         duration: lesson.duration || '',
         type: lesson.type || 'video',
@@ -79,7 +80,7 @@ const EditCourse = ({ user, onLogout }) => {
       console.log('EditCourse: Course loaded successfully');
     } catch (error) {
       console.error('EditCourse: Error loading course:', error);
-      setError(`Failed to load course: ${error.message}`);
+      setError(`Failed to load course: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }
@@ -110,7 +111,7 @@ const EditCourse = ({ user, onLogout }) => {
       const currentLessonIds = lessons.filter(l => !l.isNew).map(l => l.id);
       
       // Delete removed lessons
-      const deletedLessonIds = originalLessonIds.filter(id => !currentLessonIds.includes(id));
+      const deletedLessonIds = originalLessonIds.filter(lessonId => !currentLessonIds.includes(lessonId));
       for (const lessonId of deletedLessonIds) {
         try {
           console.log('EditCourse: Deleting lesson', lessonId);
@@ -124,8 +125,10 @@ const EditCourse = ({ user, onLogout }) => {
       for (let i = 0; i < lessons.length; i++) {
         const lesson = lessons[i];
         const lessonData = {
-          courseId: parseInt(id),
+          courseId: parseInt(id), // Convert to integer
           title: lesson.title,
+          description: lesson.content || lesson.title,
+          content: lesson.content || '',
           type: lesson.type || 'video',
           videoUrl: lesson.youtubeUrl,
           duration: parseInt(lesson.duration) || 0,
@@ -143,7 +146,8 @@ const EditCourse = ({ user, onLogout }) => {
             await lessonAPI.updateLesson(lesson.id, lessonData);
           }
         } catch (err) {
-          console.error('EditCourse: Error saving lesson', lesson, err);
+          console.error('EditCourse: Error saving lesson', lesson, err.response?.data || err);
+          throw new Error(`Failed to save lesson "${lesson.title}": ${err.response?.data?.message || err.message}`);
         }
       }
 
@@ -167,7 +171,7 @@ const EditCourse = ({ user, onLogout }) => {
         navigate('/teacher');
       } catch (error) {
         console.error('EditCourse: Error deleting course:', error);
-        alert('Failed to delete course: ' + error.message);
+        alert('Failed to delete course: ' + (error.response?.data?.message || error.message));
       }
     }
   };
@@ -176,6 +180,7 @@ const EditCourse = ({ user, onLogout }) => {
     const newLesson = {
       id: `new_${Date.now()}`, // Temporary ID for new lessons
       title: '',
+      content: '',
       youtubeUrl: '',
       duration: '',
       type: 'video',
@@ -192,7 +197,6 @@ const EditCourse = ({ user, onLogout }) => {
 
   const updateLesson = (lessonId, field, value) => {
     console.log('EditCourse: Updating lesson', lessonId, field, value);
-    // CRITICAL: Map creates NEW objects, preventing shared state bug
     setLessons(prevLessons => 
       prevLessons.map(lesson => 
         lesson.id === lessonId 
@@ -403,11 +407,11 @@ const EditCourse = ({ user, onLogout }) => {
                         />
                       </div>
                       <div className="form-field">
-                        <label>YouTube URL *</label>
+                        <label>Video URL * (Any Platform)</label>
                         <input
                           className="input"
                           type="url"
-                          placeholder="https://www.youtube.com/watch?v=..."
+                          placeholder="https://www.youtube.com/watch?v=... or any video URL"
                           value={lesson.youtubeUrl}
                           onChange={(e) => updateLesson(lesson.id, 'youtubeUrl', e.target.value)}
                           required
@@ -421,6 +425,16 @@ const EditCourse = ({ user, onLogout }) => {
                           placeholder="e.g., 15"
                           value={lesson.duration}
                           onChange={(e) => updateLesson(lesson.id, 'duration', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-field full-width">
+                        <label>Lesson Notes/Description (Optional)</label>
+                        <textarea
+                          className="input textarea"
+                          placeholder="Add notes or key points..."
+                          value={lesson.content}
+                          onChange={(e) => updateLesson(lesson.id, 'content', e.target.value)}
+                          rows={3}
                         />
                       </div>
                     </div>
