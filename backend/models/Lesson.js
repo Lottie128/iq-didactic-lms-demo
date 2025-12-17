@@ -19,6 +19,11 @@ const Lesson = sequelize.define('Lesson', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  type: {
+    type: DataTypes.ENUM('video', 'text', 'image'),
+    defaultValue: 'video',
+    allowNull: false
+  },
   videoUrl: {
     type: DataTypes.STRING,
     allowNull: true
