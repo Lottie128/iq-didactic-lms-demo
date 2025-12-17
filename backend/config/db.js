@@ -58,12 +58,12 @@ const testConnection = async () => {
 // Sync database (create tables)
 const syncDatabase = async () => {
   try {
-    // FORCE SYNC TO REBUILD SCHEMA (removes all data)
-    // Change back to { alter: false } after first successful deployment
-    const syncOptions = { force: true };
+    // MIGRATION HANDLES TABLE DROPS
+    // Sequelize just creates new tables with correct schema
+    const syncOptions = { alter: false };
     
     await sequelize.sync(syncOptions);
-    console.log('✅ Database synced (FORCE MODE - All tables recreated)');
+    console.log('✅ Database synced');
     return true;
   } catch (error) {
     console.error('❌ Database sync failed:', error.message);
