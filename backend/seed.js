@@ -1,6 +1,6 @@
 const { sequelize } = require('./config/db');
 const bcrypt = require('bcryptjs');
-const { User, Course, Lesson, Enrollment, Progress, Quiz, Question } = require('./models');
+const { User, Course, Lesson, Enrollment, Progress } = require('./models');
 
 const seedDatabase = async () => {
   try {
@@ -132,7 +132,7 @@ const seedDatabase = async () => {
 
     console.log('✅ Courses created');
 
-    // Create Lessons for Course 1 (Web Development)
+    // Create Lessons for Course 1
     console.log('Creating lessons...');
     const course1Lessons = [
       {
@@ -201,7 +201,7 @@ const seedDatabase = async () => {
       await Lesson.create(lessonData);
     }
 
-    // Create Lessons for Course 2 (Data Science)
+    // Create Lessons for Course 2
     const course2Lessons = [
       {
         courseId: course2.id,
@@ -245,7 +245,7 @@ const seedDatabase = async () => {
       await Lesson.create(lessonData);
     }
 
-    // Create Lessons for Course 3 (UI/UX)
+    // Create Lessons for Course 3
     const course3Lessons = [
       {
         courseId: course3.id,
@@ -281,9 +281,8 @@ const seedDatabase = async () => {
 
     // Create Enrollments
     console.log('Creating enrollments...');
-    // Enroll students in various courses
     const enrollments = [
-      // Course 1 enrollments (6 students)
+      // Course 1 enrollments
       { userId: students[0].id, courseId: course1.id, progress: 80 },
       { userId: students[1].id, courseId: course1.id, progress: 60 },
       { userId: students[2].id, courseId: course1.id, progress: 100 },
@@ -291,20 +290,20 @@ const seedDatabase = async () => {
       { userId: students[4].id, courseId: course1.id, progress: 20 },
       { userId: students[5].id, courseId: course1.id, progress: 90 },
 
-      // Course 2 enrollments (5 students)
+      // Course 2 enrollments
       { userId: students[1].id, courseId: course2.id, progress: 45 },
       { userId: students[2].id, courseId: course2.id, progress: 75 },
       { userId: students[4].id, courseId: course2.id, progress: 30 },
       { userId: students[6].id, courseId: course2.id, progress: 85 },
       { userId: students[7].id, courseId: course2.id, progress: 15 },
 
-      // Course 3 enrollments (4 students)
+      // Course 3 enrollments
       { userId: students[0].id, courseId: course3.id, progress: 50 },
       { userId: students[3].id, courseId: course3.id, progress: 70 },
       { userId: students[5].id, courseId: course3.id, progress: 35 },
       { userId: students[6].id, courseId: course3.id, progress: 95 },
 
-      // Course 4 enrollments (3 students)
+      // Course 4 enrollments
       { userId: students[1].id, courseId: course4.id, progress: 25 },
       { userId: students[4].id, courseId: course4.id, progress: 55 },
       { userId: students[7].id, courseId: course4.id, progress: 10 }
@@ -327,7 +326,7 @@ const seedDatabase = async () => {
         courseId: course1.id,
         lessonId: course1LessonIds[i].id,
         completed: true,
-        watchTime: i === 3 ? 20 : 0 // Last lesson partially watched
+        timeSpent: i === 3 ? 20 : 0
       });
     }
 
@@ -338,74 +337,11 @@ const seedDatabase = async () => {
         courseId: course1.id,
         lessonId: course1LessonIds[i].id,
         completed: true,
-        watchTime: 0
+        timeSpent: 0
       });
     }
 
     console.log('✅ Progress records created');
-
-    // Create a sample Quiz
-    console.log('Creating quizzes...');
-    const quiz1 = await Quiz.create({
-      courseId: course1.id,
-      title: 'HTML & CSS Fundamentals Quiz',
-      description: 'Test your knowledge of HTML and CSS basics',
-      timeLimit: 30,
-      passingScore: 70,
-      published: true
-    });
-
-    // Create Questions for Quiz
-    const questions = [
-      {
-        quizId: quiz1.id,
-        question: 'What does HTML stand for?',
-        type: 'multiple-choice',
-        options: JSON.stringify([
-          'Hyper Text Markup Language',
-          'High Tech Modern Language',
-          'Home Tool Markup Language',
-          'Hyperlinks and Text Markup Language'
-        ]),
-        correctAnswer: 0,
-        points: 10,
-        explanation: 'HTML stands for Hyper Text Markup Language. It is the standard markup language for creating web pages.'
-      },
-      {
-        quizId: quiz1.id,
-        question: 'Which CSS property is used to change the text color?',
-        type: 'multiple-choice',
-        options: JSON.stringify([
-          'text-color',
-          'font-color',
-          'color',
-          'text-style'
-        ]),
-        correctAnswer: 2,
-        points: 10,
-        explanation: 'The "color" property is used to set the color of text in CSS.'
-      },
-      {
-        quizId: quiz1.id,
-        question: 'Which HTML tag is used for creating a hyperlink?',
-        type: 'multiple-choice',
-        options: JSON.stringify([
-          '<link>',
-          '<a>',
-          '<href>',
-          '<hyperlink>'
-        ]),
-        correctAnswer: 1,
-        points: 10,
-        explanation: 'The <a> (anchor) tag is used to create hyperlinks in HTML.'
-      }
-    ];
-
-    for (const questionData of questions) {
-      await Question.create(questionData);
-    }
-
-    console.log('✅ Quizzes and questions created');
 
     console.log('\n🎉 Database seeded successfully!');
     console.log('\n📝 Test Accounts:');
