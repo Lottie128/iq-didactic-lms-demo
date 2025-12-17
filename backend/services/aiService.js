@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize Gemini
+// Initialize Gemini with updated SDK (v0.24.1)
+// Using gemini-2.0-flash-exp model (latest as of Dec 2024)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Model configuration
