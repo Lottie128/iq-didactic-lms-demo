@@ -17,6 +17,22 @@ const sequelize = process.env.DATABASE_URL
         min: 0,
         acquire: 30000,
         idle: 10000
+      },
+      // CRITICAL: Define hooks to control sync order
+      define: {
+        hooks: {
+          beforeDefine: (attributes, options) => {
+            // Remove constraints temporarily during initial sync
+            if (options.tableName) {
+              Object.keys(attributes).forEach(key => {
+                if (attributes[key].references) {
+                  // Keep reference but don't enforce yet
+                  attributes[key].references.deferrable = Sequelize.Deferrable.INITIALLY_DEFERRED;
+                }
+              });
+            }
+          }
+        }
       }
     })
   : new Sequelize(
@@ -58,16 +74,34 @@ const testConnection = async () => {
 // Sync database (create tables)
 const syncDatabase = async () => {
   try {
-    // In production, use alter: false to prevent accidental data loss
-    const syncOptions = process.env.NODE_ENV === 'production' 
-      ? { alter: false } 
-      : { alter: true };
+    // Import models to ensure they're loaded
+    const models = require('../models');
     
-    await sequelize.sync(syncOptions);
+    // Sync in specific order: parent tables first
+    console.log('🔄 Syncing User table...');
+    await models.User.sync({ alter: false });
+    
+    console.log('🔄 Syncing Course table...');
+    await models.Course.sync({ alter: false });
+    
+    console.log('🔄 Syncing Lesson table...');
+    await models.Lesson.sync({ alter: false });
+    
+    console.log('🔄 Syncing Enrollment table...');
+    await models.Enrollment.sync({ alter: false });
+    
+    console.log('🔄 Syncing Progress table...');
+    await models.Progress.sync({ alter: false });
+    
+    // Sync remaining models
+    console.log('🔄 Syncing remaining tables...');
+    await sequelize.sync({ alter: false });
+    
     console.log('✅ Database synced');
     return true;
   } catch (error) {
     console.error('❌ Database sync failed:', error.message);
+    console.error('Error details:', error);
     return false;
   }
 };

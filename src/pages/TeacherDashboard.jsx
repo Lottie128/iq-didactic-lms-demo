@@ -14,7 +14,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
     totalStudents: 0,
     totalCourses: 0,
     totalEnrollments: 0,
-    avgCompletion: 0
+    avgCompletion: 0,
+    revenue: '0.00'
   });
 
   useEffect(() => {
@@ -25,24 +26,70 @@ const TeacherDashboard = ({ user, onLogout }) => {
     try {
       setLoading(true);
 
-      // Fetch teacher's courses
-      const coursesResponse = await courseAPI.getMyCourses();
-      const teacherCourses = coursesResponse.data || [];
+      // Fetch real analytics from API
+      const token = localStorage.getItem('token');
+      const analyticsResponse = await fetch(
+        `${process.env.REACT_APP_API_URL || 'https://iq-didactic-lms-demo-production.up.railway.app/api'}/analytics/teacher`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
-      // Calculate stats
-      const totalEnrollments = teacherCourses.reduce((sum, course) => sum + (course.enrollmentCount || 0), 0);
-      
-      setStats({
-        totalStudents: totalEnrollments,
-        totalCourses: teacherCourses.length,
-        totalEnrollments: totalEnrollments,
-        avgCompletion: 87 // TODO: Calculate from actual data
-      });
+      if (analyticsResponse.ok) {
+        const { data } = await analyticsResponse.json();
+        
+        // Set real stats from API
+        setStats({
+          totalStudents: data.overview.totalStudents || 0,
+          totalCourses: data.overview.totalCourses || 0,
+          totalEnrollments: data.overview.totalEnrollments || 0,
+          avgCompletion: data.overview.avgCompletion || 0,
+          revenue: data.overview.revenue || '0.00'
+        });
 
-      setCourses(teacherCourses);
+        // Set course performance data
+        setCourses(data.coursePerformance || []);
+      } else {
+        // Fallback: Fetch courses the old way if analytics fails
+        const coursesResponse = await courseAPI.getMyCourses();
+        const teacherCourses = coursesResponse.data || [];
+        
+        const totalEnrollments = teacherCourses.reduce((sum, course) => sum + (course.enrollmentCount || 0), 0);
+        
+        setStats({
+          totalStudents: totalEnrollments,
+          totalCourses: teacherCourses.length,
+          totalEnrollments: totalEnrollments,
+          avgCompletion: 0,
+          revenue: '0.00'
+        });
+
+        setCourses(teacherCourses);
+      }
 
     } catch (error) {
       console.error('Error loading teacher data:', error);
+      
+      // Fallback to basic course data
+      try {
+        const coursesResponse = await courseAPI.getMyCourses();
+        const teacherCourses = coursesResponse.data || [];
+        setCourses(teacherCourses);
+        
+        const totalEnrollments = teacherCourses.reduce((sum, course) => sum + (course.enrollmentCount || 0), 0);
+        setStats({
+          totalStudents: totalEnrollments,
+          totalCourses: teacherCourses.length,
+          totalEnrollments: totalEnrollments,
+          avgCompletion: 0,
+          revenue: '0.00'
+        });
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
@@ -179,7 +226,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
                 <div key={course.id} className="course-card glass scale-in">
                   <div className="course-header">
                     <div className="course-category">{course.category}</div>
-                    <div className="course-badge">{course.enrollmentCount || 0} students</div>
+                    <div className="course-badge">{course.students || course.enrollmentCount || 0} students</div>
                   </div>
                   {course.thumbnail && (
                     <div className="course-thumbnail">
@@ -189,9 +236,9 @@ const TeacherDashboard = ({ user, onLogout }) => {
                   <h3>{course.title}</h3>
                   <p className="course-desc">{course.description?.substring(0, 100)}...</p>
                   <div className="course-meta">
-                    <span><Video size={14} /> {course.videos?.length || 0} videos</span>
-                    <span><Users size={14} /> {course.enrollmentCount || 0}</span>
-                    <span><BarChart3 size={14} /> {course.level}</span>
+                    <span><Video size={14} /> {course.lessons || course.videos?.length || 0} lessons</span>
+                    <span><Users size={14} /> {course.students || course.enrollmentCount || 0}</span>
+                    <span><BarChart3 size={14} /> {course.avgProgress || 0}% progress</span>
                   </div>
                   <div className="course-footer">
                     <button 
@@ -250,8 +297,8 @@ const TeacherDashboard = ({ user, onLogout }) => {
                 <span className="stat-lbl">Completion</span>
               </div>
               <div className="admin-stat">
-                <span className="stat-num">4.8</span>
-                <span className="stat-lbl">Avg Rating</span>
+                <span className="stat-num">${stats.revenue}</span>
+                <span className="stat-lbl">Revenue</span>
               </div>
               <div className="admin-stat">
                 <span className="stat-num">{stats.totalEnrollments}</span>

@@ -9,7 +9,7 @@ exports.getAllLessons = async (req, res, next) => {
     const { courseId } = req.params;
 
     const lessons = await Lesson.findAll({
-      where: { courseId: String(courseId) },
+      where: { courseId: parseInt(courseId) },
       order: [['order', 'ASC'], ['createdAt', 'ASC']],
       attributes: ['id', 'title', 'description', 'content', 'type', 'videoUrl', 'videoPlatform', 'duration', 'order', 'published', 'thumbnail', 'resources']
     });
@@ -75,11 +75,11 @@ exports.createLesson = async (req, res, next) => {
   try {
     const { courseId, title, description, content, type, videoUrl, duration, order, published, thumbnail, resources } = req.body;
 
-    // Convert courseId to string if it's a number
-    const courseIdStr = String(courseId);
+    // Convert courseId to integer
+    const courseIdInt = parseInt(courseId);
 
     // Check if course exists and user owns it (or is admin)
-    const course = await Course.findByPk(courseIdStr);
+    const course = await Course.findByPk(courseIdInt);
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -116,14 +116,14 @@ exports.createLesson = async (req, res, next) => {
     let lessonOrder = order;
     if (!lessonOrder && lessonOrder !== 0) {
       const lastLesson = await Lesson.findOne({
-        where: { courseId: courseIdStr },
+        where: { courseId: courseIdInt },
         order: [['order', 'DESC']]
       });
       lessonOrder = lastLesson ? lastLesson.order + 1 : 0;
     }
 
     const lesson = await Lesson.create({
-      courseId: courseIdStr,
+      courseId: courseIdInt,
       title,
       description: description || '',
       content: content || '',
@@ -266,10 +266,10 @@ exports.reorderLessons = async (req, res, next) => {
       });
     }
 
-    const courseIdStr = String(courseId);
+    const courseIdInt = parseInt(courseId);
 
     // Check if course exists and user owns it
-    const course = await Course.findByPk(courseIdStr);
+    const course = await Course.findByPk(courseIdInt);
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -288,7 +288,7 @@ exports.reorderLessons = async (req, res, next) => {
     const updatePromises = lessonOrders.map(({ id, order }) => {
       return Lesson.update(
         { order },
-        { where: { id, courseId: courseIdStr } }
+        { where: { id, courseId: courseIdInt } }
       );
     });
 
@@ -296,7 +296,7 @@ exports.reorderLessons = async (req, res, next) => {
 
     // Get updated lessons
     const updatedLessons = await Lesson.findAll({
-      where: { courseId: courseIdStr },
+      where: { courseId: courseIdInt },
       order: [['order', 'ASC']]
     });
 

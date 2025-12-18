@@ -3,9 +3,9 @@ const { sequelize } = require('../config/db');
 
 const User = sequelize.define('User', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
   name: {
     type: DataTypes.STRING,
@@ -29,6 +29,12 @@ const User = sequelize.define('User', {
   role: {
     type: DataTypes.ENUM('student', 'teacher', 'admin'),
     defaultValue: 'student'
+  },
+  verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false,
+    comment: 'For teacher verification - students and admins are auto-verified'
   },
   avatar: {
     type: DataTypes.STRING,
@@ -95,42 +101,42 @@ const User = sequelize.define('User', {
   timestamps: true,
   indexes: [
     {
-      // Email is already unique, but explicit index for faster lookups
       fields: ['email'],
       name: 'users_email_idx'
     },
     {
-      // Role-based queries (get all teachers, students, etc.)
       fields: ['role'],
       name: 'users_role_idx'
     },
     {
-      // Active user filtering
+      fields: ['verified'],
+      name: 'users_verified_idx'
+    },
+    {
       fields: ['isActive'],
       name: 'users_is_active_idx'
     },
     {
-      // Composite index for role + active status (common query pattern)
       fields: ['role', 'isActive'],
       name: 'users_role_active_idx'
     },
     {
-      // Last login tracking and activity reports
+      fields: ['role', 'verified'],
+      name: 'users_role_verified_idx'
+    },
+    {
       fields: ['lastLogin'],
       name: 'users_last_login_idx'
     },
     {
-      // Leaderboard and gamification queries
       fields: ['xp'],
       name: 'users_xp_idx'
     },
     {
-      // Level-based queries
       fields: ['level'],
       name: 'users_level_idx'
     },
     {
-      // Created at for user registration reports
       fields: ['createdAt'],
       name: 'users_created_at_idx'
     }

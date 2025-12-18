@@ -15,29 +15,100 @@ const TeacherStudentManagement = ({ user, onLogout }) => {
   const [courseFilter, setCourseFilter] = useState('all');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalCourses: 0,
+    totalEnrollments: 0,
+    avgProgress: 0
+  });
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [courseFilter]);
 
   const loadData = async () => {
     try {
       setLoading(true);
 
-      // Fetch teacher's courses
-      const coursesResponse = await courseAPI.getMyCourses();
-      const teacherCourses = coursesResponse.data || [];
-      setCourses(teacherCourses);
-
-      // Fetch all students (teachers have permission)
-      const studentsResponse = await userAPI.getAllUsers({ role: 'student', limit: 100 });
-      const allStudents = studentsResponse.data || [];
+      // Fetch real data from analytics API
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://iq-didactic-lms-demo-production.up.railway.app/api';
       
-      setStudents(allStudents);
+      // Build query params
+      const params = new URLSearchParams();
+      if (courseFilter !== 'all') {
+        params.append('courseId', courseFilter);
+      }
+      params.append('limit', '100');
+
+      const studentsResponse = await fetch(
+        `${apiUrl}/analytics/teacher/students?${params}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (studentsResponse.ok) {
+        const { data } = await studentsResponse.json();
+        setStudents(data.students || []);
+        setCourses(data.courses || []);
+        
+        // Calculate stats from real data
+        const totalEnrollments = data.students.length;
+        const avgProgress = data.students.length > 0 
+          ? Math.round(data.students.reduce((sum, s) => sum + (s.progress || 0), 0) / data.students.length)
+          : 0;
+        
+        setStats({
+          totalStudents: totalEnrollments,
+          totalCourses: data.courses.length,
+          totalEnrollments: totalEnrollments,
+          avgProgress: avgProgress
+        });
+      } else {
+        // Fallback to old method
+        const coursesResponse = await courseAPI.getMyCourses();
+        const teacherCourses = coursesResponse.data || [];
+        setCourses(teacherCourses);
+
+        const studentsResponse = await userAPI.getAllUsers({ role: 'student', limit: 100 });
+        const allStudents = studentsResponse.data || [];
+        setStudents(allStudents);
+        
+        setStats({
+          totalStudents: allStudents.length,
+          totalCourses: teacherCourses.length,
+          totalEnrollments: teacherCourses.reduce((sum, c) => sum + (c.enrollmentCount || 0), 0),
+          avgProgress: 0
+        });
+      }
 
     } catch (error) {
       console.error('Error loading data:', error);
       setError('Failed to load students');
+      
+      // Fallback
+      try {
+        const coursesResponse = await courseAPI.getMyCourses();
+        const teacherCourses = coursesResponse.data || [];
+        setCourses(teacherCourses);
+
+        const studentsResponse = await userAPI.getAllUsers({ role: 'student', limit: 100 });
+        const allStudents = studentsResponse.data || [];
+        setStudents(allStudents);
+        
+        setStats({
+          totalStudents: allStudents.length,
+          totalCourses: teacherCourses.length,
+          totalEnrollments: teacherCourses.reduce((sum, c) => sum + (c.enrollmentCount || 0), 0),
+          avgProgress: 0
+        });
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
@@ -46,7 +117,6 @@ const TeacherStudentManagement = ({ user, onLogout }) => {
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          s.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    // TODO: Filter by course when enrollment data is available
     return matchesSearch;
   });
 
@@ -77,7 +147,7 @@ const TeacherStudentManagement = ({ user, onLogout }) => {
           </button>
           <div className="header-title">
             <h2>Student Management</h2>
-            <p>{students.length} total students</p>
+            <p>{stats.totalStudents} total students</p>
           </div>
         </div>
         <nav className="header-nav">
@@ -111,28 +181,28 @@ const TeacherStudentManagement = ({ user, onLogout }) => {
           <div className="stat-card glass">
             <Users size={20} />
             <div>
-              <p className="stat-value">{students.length}</p>
+              <p className="stat-value">{stats.totalStudents}</p>
               <p className="stat-label">Total Students</p>
             </div>
           </div>
           <div className="stat-card glass">
             <BookOpen size={20} />
             <div>
-              <p className="stat-value">{courses.length}</p>
+              <p className="stat-value">{stats.totalCourses}</p>
               <p className="stat-label">Your Courses</p>
             </div>
           </div>
           <div className="stat-card glass">
             <Award size={20} />
             <div>
-              <p className="stat-value">{courses.reduce((sum, c) => sum + (c.enrollmentCount || 0), 0)}</p>
+              <p className="stat-value">{stats.totalEnrollments}</p>
               <p className="stat-label">Total Enrollments</p>
             </div>
           </div>
           <div className="stat-card glass">
             <BarChart3 size={20} />
             <div>
-              <p className="stat-value">87%</p>
+              <p className="stat-value">{stats.avgProgress}%</p>
               <p className="stat-label">Avg Progress</p>
             </div>
           </div>
@@ -164,15 +234,16 @@ const TeacherStudentManagement = ({ user, onLogout }) => {
               <tr>
                 <th>Student</th>
                 <th>Email</th>
-                <th>Location</th>
-                <th>Joined</th>
+                <th>Course</th>
+                <th>Progress</th>
+                <th>Enrolled</th>
                 <th>Last Active</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredStudents.map(student => (
-                <tr key={student.id}>
+                <tr key={`${student.userId}-${student.courseId}`}>
                   <td>
                     <div className="user-cell">
                       <div className="user-avatar-small">{student.name?.charAt(0) || 'S'}</div>
@@ -183,14 +254,22 @@ const TeacherStudentManagement = ({ user, onLogout }) => {
                     </div>
                   </td>
                   <td>{student.email}</td>
-                  <td>{student.city ? `${student.city}, ${student.country}` : student.country || 'N/A'}</td>
-                  <td>{formatDate(student.createdAt)}</td>
-                  <td>{formatDate(student.lastLogin) || 'Never'}</td>
+                  <td>{student.courseTitle || 'N/A'}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${student.progress || 0}%`, height: '100%', background: '#22c55e', transition: 'width 0.3s' }} />
+                      </div>
+                      <span>{student.progress || 0}%</span>
+                    </div>
+                  </td>
+                  <td>{formatDate(student.enrolledAt)}</td>
+                  <td>{formatDate(student.lastActive) || 'Never'}</td>
                   <td>
                     <div className="action-btns">
                       <button 
                         className="btn-icon-small" 
-                        onClick={() => navigate(`/teacher/students/${student.id}`)}
+                        onClick={() => navigate(`/teacher/students/${student.userId}`)}
                         title="View Details"
                       >
                         <Eye size={14} />
@@ -228,22 +307,22 @@ const TeacherStudentManagement = ({ user, onLogout }) => {
               {courses.map(course => (
                 <div key={course.id} className="course-card glass scale-in">
                   <div className="course-header">
-                    <div className="course-category">{course.category}</div>
-                    <div className="course-badge">{course.enrollmentCount || 0} students</div>
+                    <div className="course-category">{course.category || 'Course'}</div>
+                    <div className="course-badge">{students.filter(s => s.courseId === course.id).length} students</div>
                   </div>
                   <h3>{course.title}</h3>
                   <div className="course-meta">
-                    <span><Users size={14} /> {course.enrollmentCount || 0} enrolled</span>
-                    <span><BarChart3 size={14} /> {course.level}</span>
+                    <span><Users size={14} /> {students.filter(s => s.courseId === course.id).length} enrolled</span>
+                    <span><BarChart3 size={14} /> {course.level || 'All Levels'}</span>
                   </div>
                   <div className="course-footer">
                     <button 
                       className="btn btn-secondary"
-                      onClick={() => navigate(`/course/${course.id}`)}
+                      onClick={() => setCourseFilter(course.id.toString())}
                       style={{ width: '100%' }}
                     >
                       <Eye size={14} />
-                      View Course
+                      View Students
                     </button>
                   </div>
                 </div>

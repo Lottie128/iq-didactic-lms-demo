@@ -1,0 +1,13 @@
+// THIS MIGRATION HAS BEEN DISABLED
+// It was a one-time migration to convert from UUID to INTEGER
+// Database schema is now correct
+// Keep this file for reference only
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    console.log('⏭️  Skipping disabled migration: 001-force-reset-to-integer-ids');
+  },
+  down: async (queryInterface, Sequelize) => {
+    console.log('⏭️  Skipping disabled migration');
+  }
+};

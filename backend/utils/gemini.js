@@ -1,8 +1,18 @@
-const { GoogleGenAI } = require('@google/genai');
+/**
+ * Gemini AI Utility
+ * Uses dynamic import to support ES modules in CommonJS environment
+ */
 
-// Initialize Gemini AI client
-// The client automatically picks up GEMINI_API_KEY from environment variables
-const ai = new GoogleGenAI({});
+let GoogleGenAI = null;
+
+// Initialize Gemini AI client lazily
+const getAIClient = async () => {
+  if (!GoogleGenAI) {
+    const module = await import('@google/genai');
+    GoogleGenAI = module.GoogleGenAI;
+  }
+  return new GoogleGenAI({});
+};
 
 /**
  * Generate quiz questions using Gemini AI
@@ -14,6 +24,8 @@ const ai = new GoogleGenAI({});
  */
 async function generateQuizQuestions(courseTitle, courseDescription, lessonContent = '', questionCount = 5) {
   try {
+    const ai = await getAIClient();
+
     const prompt = `You are an expert educator creating quiz questions for an online course.
 
 Course Title: ${courseTitle}
@@ -40,9 +52,9 @@ Format your response as valid JSON array like this:
 
 IMPORTANT: Return ONLY the JSON array, no additional text or markdown formatting.`;
 
-    // Use gemini-2.5-flash model (latest and fastest)
+    // Use gemini-2.0-flash-exp model (latest and fastest)
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-exp',
       contents: prompt
     });
 
@@ -83,6 +95,8 @@ IMPORTANT: Return ONLY the JSON array, no additional text or markdown formatting
  */
 async function generateLessonContent(lessonTitle, courseContext) {
   try {
+    const ai = await getAIClient();
+
     const prompt = `You are an expert educator creating lesson content for an online course.
 
 Lesson Title: ${lessonTitle}
@@ -98,7 +112,7 @@ Generate comprehensive, educational content for this lesson. Include:
 Format the content in Markdown for easy reading. Make it engaging and educational.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-exp',
       contents: prompt
     });
 
@@ -118,6 +132,8 @@ Format the content in Markdown for easy reading. Make it engaging and educationa
  */
 async function chatWithAI(question, context = '') {
   try {
+    const ai = await getAIClient();
+
     const prompt = context 
       ? `You are a helpful AI teacher assistant helping students with their studies.
 
@@ -133,7 +149,7 @@ Student Question: ${question}
 Provide a clear, educational, and encouraging response.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-exp',
       contents: prompt
     });
 
@@ -154,6 +170,8 @@ Provide a clear, educational, and encouraging response.`;
  */
 async function generateCourseOutline(courseTitle, courseDescription, lessonCount = 10) {
   try {
+    const ai = await getAIClient();
+
     const prompt = `You are an expert curriculum designer for online courses.
 
 Course Title: ${courseTitle}
@@ -178,7 +196,7 @@ Format as JSON array:
 IMPORTANT: Return ONLY the JSON array.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-exp',
       contents: prompt
     });
 

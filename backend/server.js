@@ -6,6 +6,7 @@ const path = require('path');
 require('dotenv').config();
 
 const { sequelize, testConnection, syncDatabase } = require('./config/db');
+const seedDatabase = require('./seed');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const courseRoutes = require('./routes/courses');
@@ -18,57 +19,27 @@ const achievementRoutes = require('./routes/achievements');
 const certificateRoutes = require('./routes/certificates');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
+const analyticsRoutes = require('./routes/analytics');
 const aiRoutes = require('./routes/ai');
 const errorHandler = require('./middleware/errorHandler');
 const { createRateLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
-// CORS configuration - allow multiple origins (strict mode)
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5000',
-  'https://www.iqdidactic.com',
-  'https://iqdidactic.com',
-  'https://iq-didactic-lms-demo.vercel.app',
-  process.env.FRONTEND_URL
-].filter(Boolean); // Remove undefined values
-
+// CORS configuration - PERMISSIVE for demo
 const corsOptions = {
-  origin: function (origin, callback) {
-    // In development, allow requests with no origin (like Postman, curl)
-    // In production, require origin
-    if (!origin && process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    
-    if (!origin) {
-      return callback(new Error('Origin header is required'), false);
-    }
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'), false);
-    }
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400 // 24 hours
+  exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  maxAge: 86400
 };
 
 // Middleware
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
@@ -76,14 +47,14 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate limiting
 app.use('/api/auth', createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: 'Too many authentication attempts. Please try again later.'
 }));
 
 app.use('/api/', createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Too many requests. Please try again later.'
 }));
 
@@ -100,9 +71,7 @@ app.get('/', (req, res) => {
 
 app.get('/health', async (req, res) => {
   try {
-    // Check database connection
     await sequelize.authenticate();
-    
     res.json({ 
       status: 'healthy', 
       uptime: process.uptime(),
@@ -131,7 +100,8 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/ai', aiRoutes); // ✅ AI Routes Added
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
@@ -151,11 +121,8 @@ const PORT = process.env.PORT || 5000;
 const runMigrations = async () => {
   try {
     console.log('🔄 Running migrations...');
-
-    // Get all migration files
     const migrationsDir = path.join(__dirname, 'migrations');
     
-    // Check if migrations directory exists
     try {
       await fs.access(migrationsDir);
     } catch (error) {
@@ -174,7 +141,6 @@ const runMigrations = async () => {
       return true;
     }
 
-    // Run each migration
     for (const file of files) {
       console.log(`📝 Running migration: ${file}`);
       const migration = require(path.join(migrationsDir, file));
@@ -183,14 +149,13 @@ const runMigrations = async () => {
         await migration.up(sequelize.getQueryInterface(), sequelize.Sequelize);
         console.log(`✅ Migration completed: ${file}`);
       } catch (error) {
-        // Only skip if column/table already exists
         if (error.message.includes('already exists') || 
             error.message.includes('duplicate') ||
             error.message.includes('does not exist')) {
           console.log(`⏭️  Migration already applied: ${file}`);
         } else {
           console.error(`❌ Migration failed: ${file}`);
-          throw error; // Re-throw to stop server startup
+          throw error;
         }
       }
     }
@@ -210,34 +175,45 @@ const startServer = async () => {
     console.log('🚀 Starting IQ Didactic API Server...');
     console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
     
-    // Test database connection
     const dbConnected = await testConnection();
     if (!dbConnected) {
       console.error('❌ Failed to connect to database. Exiting...');
       process.exit(1);
     }
 
-    // Run migrations BEFORE syncing database
     const migrationsSuccess = await runMigrations();
     if (!migrationsSuccess) {
       console.error('❌ Migrations failed. Server cannot start with incomplete schema.');
       process.exit(1);
     }
 
-    // Sync database
     const syncSuccess = await syncDatabase();
     if (!syncSuccess) {
       console.error('❌ Database sync failed. Exiting...');
       process.exit(1);
     }
 
-    // Start server
+    try {
+      const { User } = require('./models');
+      const userCount = await User.count();
+      
+      if (userCount === 0) {
+        console.log('🌱 Database is empty. Seeding with demo data...');
+        await seedDatabase();
+        console.log('✅ Demo data seeded successfully!');
+      } else {
+        console.log('ℹ️  Database already has data. Skipping seed.');
+      }
+    } catch (seedError) {
+      console.error('⚠️  Seed error (non-critical):', seedError.message);
+    }
+
     app.listen(PORT, () => {
       console.log('\n' + '='.repeat(60));
       console.log('🚀 Server running on port', PORT);
       console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🌐 API URL: http://localhost:${PORT}`);
-      console.log(`✅ CORS enabled for: ${allowedOrigins.filter(Boolean).join(', ')}`);
+      console.log(`✅ CORS: ENABLED (All origins allowed for demo)`);
       console.log(`🤖 AI Features: ${process.env.GEMINI_API_KEY ? 'Enabled' : 'Disabled (Set GEMINI_API_KEY)'}`);
       console.log('='.repeat(60) + '\n');
     });
@@ -248,7 +224,6 @@ const startServer = async () => {
   }
 };
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('💥 UNCAUGHT EXCEPTION! Shutting down...');
   console.error(error.name, error.message);
@@ -256,14 +231,12 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (error) => {
   console.error('💥 UNHANDLED REJECTION! Shutting down...');
   console.error(error);
   process.exit(1);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received. Shutting down gracefully...');
   server.close(() => {
