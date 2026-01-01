@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, BookOpen, Sparkles, TrendingUp, Settings, LogOut, Shield, BarChart3, UserCog, Globe, Award } from 'lucide-react';
+import { Users, BookOpen, Sparkles, TrendingUp, Settings, LogOut, Shield, BarChart3, UserCog, Globe, Award, RefreshCw } from 'lucide-react';
 import { courseAPI, adminAPI } from '../services/api';
 import './Dashboard.css';
 
 const AdminDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalStudents: 0,
@@ -23,9 +25,14 @@ const AdminDashboard = ({ user, onLogout }) => {
     loadDashboardData();
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
 
       // Fetch all users (admin endpoint)
       const usersResponse = await adminAPI.getAllUsers({ limit: 100 });
@@ -58,17 +65,24 @@ const AdminDashboard = ({ user, onLogout }) => {
 
     } catch (error) {
       console.error('Error loading dashboard:', error);
+      setError('Failed to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    loadDashboardData(true);
   };
 
   if (loading) {
     return (
       <div className="dashboard-root">
         <div className="dashboard-bg" />
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          <div className="loader">Loading admin dashboard...</div>
+        <div className="loading-container-center">
+          <div className="spinner"></div>
+          <p>Loading admin dashboard...</p>
         </div>
       </div>
     );
@@ -77,6 +91,13 @@ const AdminDashboard = ({ user, onLogout }) => {
   return (
     <div className="dashboard-root">
       <div className="dashboard-bg" />
+
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="error-close">×</button>
+        </div>
+      )}
 
       <header className="dashboard-header glass">
         <div className="header-left">
@@ -87,15 +108,24 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
         </div>
         <nav className="header-nav">
+          <button 
+            className="nav-btn" 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            aria-label="Refresh dashboard"
+          >
+            <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+            <span>Refresh</span>
+          </button>
           <button className="nav-btn" onClick={() => navigate('/ai-teacher')}>
             <Sparkles size={16} />
             <span>AI Tools</span>
           </button>
-          <div className="user-menu glass" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
+          <div className="user-menu glass clickable" onClick={() => navigate('/profile')}>
             <Shield size={16} />
             <span>{user.name}</span>
           </div>
-          <button className="btn btn-secondary" onClick={onLogout}>
+          <button className="btn btn-secondary" onClick={onLogout} aria-label="Logout">
             <LogOut size={16} />
           </button>
         </nav>
@@ -108,7 +138,7 @@ const AdminDashboard = ({ user, onLogout }) => {
             <p>Monitor system health and manage platform resources.</p>
           </div>
           <div className="stats-grid">
-            <div className="stat-card glass" onClick={() => navigate('/admin/users')} style={{ cursor: 'pointer' }}>
+            <div className="stat-card glass clickable" onClick={() => navigate('/admin/users')}>
               <Users size={20} />
               <div>
                 <p className="stat-value">{stats.totalUsers.toLocaleString()}</p>
@@ -129,7 +159,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <p className="stat-label">Enrollments</p>
               </div>
             </div>
-            <div className="stat-card glass" onClick={() => navigate('/admin/analytics')} style={{ cursor: 'pointer' }}>
+            <div className="stat-card glass clickable" onClick={() => navigate('/admin/analytics')}>
               <TrendingUp size={20} />
               <div>
                 <p className="stat-value">{stats.activeUsers}</p>
@@ -140,7 +170,7 @@ const AdminDashboard = ({ user, onLogout }) => {
         </section>
 
         <section className="admin-grid">
-          <div className="admin-card glass-strong scale-in" onClick={() => navigate('/admin/users')} style={{ cursor: 'pointer' }}>
+          <div className="admin-card glass-strong scale-in clickable" onClick={() => navigate('/admin/users')}>
             <div className="admin-card-header">
               <UserCog size={24} />
               <h3>User Management</h3>
@@ -162,21 +192,29 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
 
             {recentUsers.length > 0 && (
-              <div className="recent-users" style={{ marginTop: '15px', fontSize: '13px' }}>
-                <p style={{ opacity: 0.7, marginBottom: '8px' }}>Recent Users:</p>
+              <div className="recent-users">
+                <p className="recent-users-title">Recent Users:</p>
                 {recentUsers.map(u => (
-                  <div key={u.id} style={{ padding: '5px 0', display: 'flex', justifyContent: 'space-between' }}>
+                  <div key={u.id} className="recent-user-item">
                     <span>{u.name}</span>
-                    <span style={{ opacity: 0.6 }}>{u.role}</span>
+                    <span className="user-role-badge">{u.role}</span>
                   </div>
                 ))}
               </div>
             )}
 
-            <button className="btn btn-secondary" style={{ marginTop: '15px' }} onClick={(e) => { e.stopPropagation(); navigate('/admin/users'); }}>Manage Users</button>
+            <button 
+              className="btn btn-secondary btn-mt" 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                navigate('/admin/users'); 
+              }}
+            >
+              Manage Users
+            </button>
           </div>
 
-          <div className="admin-card glass-strong scale-in" onClick={() => navigate('/admin/analytics')} style={{ cursor: 'pointer' }}>
+          <div className="admin-card glass-strong scale-in clickable" onClick={() => navigate('/admin/analytics')}>
             <div className="admin-card-header">
               <BarChart3 size={24} />
               <h3>Analytics & Insights</h3>
@@ -196,7 +234,15 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <span className="stat-lbl">Enrollments</span>
               </div>
             </div>
-            <button className="btn btn-secondary" style={{ marginTop: '15px' }} onClick={(e) => { e.stopPropagation(); navigate('/admin/analytics'); }}>View Analytics</button>
+            <button 
+              className="btn btn-secondary btn-mt" 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                navigate('/admin/analytics'); 
+              }}
+            >
+              View Analytics
+            </button>
           </div>
 
           <div className="admin-card glass-strong scale-in">
@@ -205,7 +251,7 @@ const AdminDashboard = ({ user, onLogout }) => {
               <h3>Course Management</h3>
             </div>
             <p>Manage and approve platform courses.</p>
-            <div className="course-list" style={{ marginTop: '15px' }}>
+            <div className="course-list">
               {courses.length > 0 ? (
                 courses.map(course => (
                   <div key={course.id} className="course-item">
@@ -213,14 +259,25 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <p className="course-item-title">{course.title}</p>
                       <p className="course-item-meta">{course.enrollmentCount || 0} students</p>
                     </div>
-                    <button className="btn-icon" onClick={() => navigate(`/edit-course/${course.id}`)}>→</button>
+                    <button 
+                      className="btn-icon" 
+                      onClick={() => navigate(`/edit-course/${course.id}`)}
+                      aria-label={`Edit ${course.title}`}
+                    >
+                      →
+                    </button>
                   </div>
                 ))
               ) : (
-                <p style={{ opacity: 0.6, padding: '20px 0' }}>No courses available yet</p>
+                <p className="empty-text">No courses available yet</p>
               )}
             </div>
-            <button className="btn btn-secondary" style={{ marginTop: '15px' }} onClick={() => navigate('/create-course')}>Create New Course</button>
+            <button 
+              className="btn btn-secondary btn-mt" 
+              onClick={() => navigate('/create-course')}
+            >
+              Create New Course
+            </button>
           </div>
 
           <div className="admin-card glass-strong scale-in">
@@ -243,7 +300,12 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <span className="stat-lbl">Students</span>
               </div>
             </div>
-            <button className="btn btn-secondary" style={{ marginTop: '15px' }} onClick={() => navigate('/admin/users?role=teacher')}>Manage Teachers</button>
+            <button 
+              className="btn btn-secondary btn-mt" 
+              onClick={() => navigate('/admin/users?role=teacher')}
+            >
+              Manage Teachers
+            </button>
           </div>
 
           <div className="admin-card glass-strong scale-in full-width">
@@ -253,12 +315,17 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
             <p>Platform status and real-time metrics.</p>
             <div className="country-preview">
-              <div className="country-flag">✅ API Server - Online</div>
-              <div className="country-flag">✅ Database - Connected</div>
-              <div className="country-flag">✅ User Auth - Active</div>
-              <div className="country-flag">✅ Course System - Running</div>
+              <div className="country-flag status-online">✅ API Server - Online</div>
+              <div className="country-flag status-online">✅ Database - Connected</div>
+              <div className="country-flag status-online">✅ User Auth - Active</div>
+              <div className="country-flag status-online">✅ Course System - Running</div>
             </div>
-            <button className="btn btn-secondary" style={{ marginTop: '15px' }} onClick={() => navigate('/admin/analytics')}>View Full Report</button>
+            <button 
+              className="btn btn-secondary btn-mt" 
+              onClick={() => navigate('/admin/analytics')}
+            >
+              View Full Report
+            </button>
           </div>
 
           <div className="admin-card glass-strong scale-in">
@@ -268,14 +335,24 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
             <p>Common administrative tasks.</p>
             <div className="settings-list">
-              <button className="btn btn-secondary" style={{ width: '100%', marginBottom: '10px' }} onClick={() => navigate('/create-course')}>
+              <button 
+                className="btn btn-secondary btn-full btn-mb" 
+                onClick={() => navigate('/create-course')}
+              >
                 Create Course
               </button>
-              <button className="btn btn-secondary" style={{ width: '100%', marginBottom: '10px' }} onClick={() => navigate('/admin/users')}>
+              <button 
+                className="btn btn-secondary btn-full btn-mb" 
+                onClick={() => navigate('/admin/users')}
+              >
                 Add User
               </button>
-              <button className="btn btn-secondary" style={{ width: '100%' }} onClick={() => window.location.reload()}>
-                Refresh Data
+              <button 
+                className="btn btn-secondary btn-full" 
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                {refreshing ? 'Refreshing...' : 'Refresh Data'}
               </button>
             </div>
           </div>
