@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import ThemeToggler from '../components/ThemeToggler';
 import { authAPI } from '../services/api';
@@ -41,7 +41,7 @@ const Login = ({ onLogin }) => {
       </div>
 
       <div className="auth-container fade-in">
-        <div className="auth-card glass-strong" style={{ maxWidth: '500px', margin: '0 auto' }}>
+        <div className="auth-card glass-strong">
           <div className="auth-header">
             <div className="logo-large glass">IQ</div>
             <h1>Welcome Back</h1>
@@ -49,15 +49,7 @@ const Login = ({ onLogin }) => {
           </div>
 
           {error && (
-            <div style={{
-              padding: '12px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '8px',
-              color: '#ef4444',
-              marginBottom: '20px',
-              fontSize: '14px'
-            }}>
+            <div className="error-message">
               {error}
             </div>
           )}
@@ -73,11 +65,17 @@ const Login = ({ onLogin }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
+                autoFocus
               />
             </div>
 
             <div className="form-field">
-              <label><Lock size={16} /> Password</label>
+              <div className="form-label-row">
+                <label><Lock size={16} /> Password</label>
+                <Link to="/forgot-password" className="forgot-password-link">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="password-input">
                 <input
                   className="input"
@@ -93,6 +91,7 @@ const Login = ({ onLogin }) => {
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading}
+                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -107,9 +106,9 @@ const Login = ({ onLogin }) => {
           <div className="auth-footer">
             <p>
               Don't have an account?
-              <button className="link-btn" onClick={() => navigate('/signup')} disabled={loading}>
+              <Link to="/signup" className="link-btn">
                 Sign Up
-              </button>
+              </Link>
             </p>
           </div>
         </div>
