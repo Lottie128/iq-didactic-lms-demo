@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, CheckCircle, Circle, Sparkles, LogOut, FileText, Award, MessageCircle, Star, Video, Image as ImageIcon } from 'lucide-react';
-import { courseAPI, lessonAPI } from '../services/api';
+import { ArrowLeft, Play, CheckCircle, Circle, Sparkles, LogOut, FileText, Award, MessageCircle, Star, Video, Image as ImageIcon, Lock, Loader } from 'lucide-react';
+import { courseAPI, lessonAPI, quizAPI } from '../services/api';
 import CourseReviews from './CourseReviews';
 import NotificationCenter from '../components/NotificationCenter';
 import './CourseView.css';
@@ -11,7 +11,9 @@ const CourseView = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [quizzesLoading, setQuizzesLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentLesson, setCurrentLesson] = useState(null);
   const [playing, setPlaying] = useState(false);
@@ -43,11 +45,28 @@ const CourseView = ({ user, onLogout }) => {
         console.log('CourseView: Setting first lesson as current');
         setCurrentLesson(lessonsData[0]);
       }
+
+      // Fetch quizzes
+      loadQuizzes();
     } catch (error) {
       console.error('CourseView: Error loading course:', error);
       setError('Course not found or failed to load');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadQuizzes = async () => {
+    try {
+      setQuizzesLoading(true);
+      const response = await quizAPI.getCourseQuizzes(id);
+      const quizzesData = response.data || [];
+      console.log('CourseView: Quizzes data:', quizzesData);
+      setQuizzes(quizzesData);
+    } catch (error) {
+      console.error('CourseView: Error loading quizzes:', error);
+    } finally {
+      setQuizzesLoading(false);
     }
   };
 
@@ -75,12 +94,30 @@ const CourseView = ({ user, onLogout }) => {
     return url;
   };
 
+  const calculateCompletedLessons = () => {
+    return lessons.filter(l => l.completed).length;
+  };
+
+  const isQuizUnlocked = (quiz, index) => {
+    // First quiz is always unlocked
+    if (index === 0) return true;
+    
+    // Check if previous quizzes are completed
+    // For now, check if at least 50% of lessons are completed
+    const completedLessons = calculateCompletedLessons();
+    const requiredLessons = Math.ceil(lessons.length * 0.5);
+    return completedLessons >= requiredLessons;
+  };
+
   if (loading) {
     return (
       <div className="dashboard-root">
         <div className="dashboard-bg" />
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          <div className="loader">Loading course...</div>
+          <div className="loader">
+            <Loader className="spinner" size={32} />
+            <p style={{ marginTop: '16px' }}>Loading course...</p>
+          </div>
         </div>
       </div>
     );
@@ -101,8 +138,9 @@ const CourseView = ({ user, onLogout }) => {
     );
   }
 
-  const averageRating = 4.7;
-  const totalReviews = 248;
+  // Calculate average rating from reviews (would come from API)
+  const averageRating = course.averageRating || 4.7;
+  const totalReviews = course.reviewCount || 0;
 
   return (
     <div className="course-view-root">
@@ -115,14 +153,16 @@ const CourseView = ({ user, onLogout }) => {
           </button>
           <div className="header-title">
             <h2>{course.title}</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '2px' }}>
-                {[1,2,3,4,5].map(star => (
-                  <Star key={star} size={12} fill={star <= Math.round(averageRating) ? '#fbbf24' : 'none'} color="#fbbf24" />
-                ))}
+            {totalReviews > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  {[1,2,3,4,5].map(star => (
+                    <Star key={star} size={12} fill={star <= Math.round(averageRating) ? '#fbbf24' : 'none'} color="#fbbf24" />
+                  ))}
+                </div>
+                <span style={{ fontSize: '11px', opacity: 0.7 }}>{averageRating} ({totalReviews} reviews)</span>
               </div>
-              <span style={{ fontSize: '11px', opacity: 0.7 }}>{averageRating} ({totalReviews} reviews)</span>
-            </div>
+            )}
           </div>
         </div>
         <nav className="header-nav">
@@ -224,6 +264,7 @@ const CourseView = ({ user, onLogout }) => {
               {course.duration && <div><strong>Duration:</strong> {course.duration}</div>}
               <div><strong>Instructor:</strong> {course.instructor?.name || 'IQ Didactic'}</div>
               <div><strong>Lessons:</strong> {lessons.length}</div>
+              <div><strong>Completed:</strong> {calculateCompletedLessons()} / {lessons.length}</div>
             </div>
           </div>
 
@@ -237,26 +278,69 @@ const CourseView = ({ user, onLogout }) => {
               </div>
             </div>
             <div className="quiz-list">
-              <div className="quiz-item glass">
-                <div className="quiz-info">
-                  <h4>Quiz 1: Fundamentals</h4>
-                  <p>5 questions • 30 minutes • Passing: 70%</p>
+              {quizzesLoading ? (
+                <div style={{ padding: '40px', textAlign: 'center' }}>
+                  <Loader className="spinner" size={24} />
+                  <p style={{ marginTop: '12px', opacity: 0.7 }}>Loading quizzes...</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => navigate(`/quiz/${course.id}`)}>
-                  <Award size={16} />
-                  Take Quiz
-                </button>
-              </div>
-              <div className="quiz-item glass">
-                <div className="quiz-info">
-                  <h4>Final Assessment</h4>
-                  <p>10 questions • 60 minutes • Passing: 80%</p>
+              ) : quizzes.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', opacity: 0.6 }}>
+                  <FileText size={32} style={{ opacity: 0.4, marginBottom: '12px' }} />
+                  <p>No quizzes available yet</p>
                 </div>
-                <button className="btn btn-secondary">
-                  <Award size={16} />
-                  Locked
-                </button>
-              </div>
+              ) : (
+                quizzes.map((quiz, idx) => {
+                  const isUnlocked = isQuizUnlocked(quiz, idx);
+                  const isPassed = quiz.userScore && quiz.userScore >= quiz.passingScore;
+                  
+                  return (
+                    <div key={quiz.id} className="quiz-item glass">
+                      <div className="quiz-info">
+                        <h4>{quiz.title}</h4>
+                        <p>
+                          {quiz.questions?.length || 0} questions • 
+                          {quiz.timeLimit || 30} minutes • 
+                          Passing: {quiz.passingScore || 70}%
+                        </p>
+                        {isPassed && (
+                          <span className="quiz-badge passed">
+                            <CheckCircle size={14} />
+                            Passed ({quiz.userScore}%)
+                          </span>
+                        )}
+                        {!isUnlocked && (
+                          <span className="quiz-badge locked">
+                            <Lock size={14} />
+                            Complete more lessons to unlock
+                          </span>
+                        )}
+                      </div>
+                      <button 
+                        className={`btn ${isUnlocked ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => isUnlocked && navigate(`/quiz/${quiz.id}`)}
+                        disabled={!isUnlocked}
+                      >
+                        {isPassed ? (
+                          <>
+                            <Award size={16} />
+                            Retake Quiz
+                          </>
+                        ) : isUnlocked ? (
+                          <>
+                            <Award size={16} />
+                            Take Quiz
+                          </>
+                        ) : (
+                          <>
+                            <Lock size={16} />
+                            Locked
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -273,7 +357,7 @@ const CourseView = ({ user, onLogout }) => {
           </div>
 
           {/* Reviews Section */}
-          <CourseReviews courseId={course.id} />
+          <CourseReviews courseId={course.id} currentUser={user} />
         </section>
 
         <aside className="lessons-sidebar glass">
