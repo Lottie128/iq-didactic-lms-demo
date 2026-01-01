@@ -7,10 +7,11 @@ const { Op } = require('sequelize');
 exports.getAllQuizzes = async (req, res, next) => {
   try {
     const quizzes = await Quiz.findAll({
-      where: { isPublished: true },
+      where: { published: true },
       include: [
         {
           model: Course,
+          as: 'course',
           attributes: ['id', 'title']
         }
       ],
@@ -35,7 +36,7 @@ exports.getCourseQuizzes = async (req, res, next) => {
     const quizzes = await Quiz.findAll({
       where: {
         courseId: req.params.courseId,
-        isPublished: true
+        published: true
       },
       order: [['createdAt', 'ASC']]
     });
@@ -59,6 +60,7 @@ exports.getQuizById = async (req, res, next) => {
       include: [
         {
           model: Course,
+          as: 'course',
           attributes: ['id', 'title']
         }
       ]

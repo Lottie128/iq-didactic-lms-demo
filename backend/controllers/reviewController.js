@@ -14,6 +14,7 @@ exports.getCourseReviews = async (req, res, next) => {
       include: [
         {
           model: User,
+          as: 'user',
           attributes: ['id', 'name', 'avatar']
         }
       ],
@@ -30,6 +31,7 @@ exports.getCourseReviews = async (req, res, next) => {
       data: reviews
     });
   } catch (error) {
+    console.error('Error fetching reviews:', error);
     next(error);
   }
 };
@@ -63,15 +65,27 @@ exports.createReview = async (req, res, next) => {
       comment
     });
 
+    // Fetch the review with user data
+    const reviewWithUser = await Review.findByPk(review.id, {
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'avatar']
+        }
+      ]
+    });
+
     // Update course average rating
     await updateCourseRating(req.params.courseId);
 
     res.status(201).json({
       success: true,
       message: 'Review created successfully',
-      data: review
+      data: reviewWithUser
     });
   } catch (error) {
+    console.error('Error creating review:', error);
     next(error);
   }
 };
@@ -97,7 +111,21 @@ exports.updateReview = async (req, res, next) => {
       });
     }
 
-    await review.update(req.body);
+    await review.update({
+      ...req.body,
+      edited: true
+    });
+
+    // Fetch updated review with user data
+    const updatedReview = await Review.findByPk(review.id, {
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'avatar']
+        }
+      ]
+    });
 
     // Update course average rating
     await updateCourseRating(review.courseId);
@@ -105,9 +133,10 @@ exports.updateReview = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Review updated successfully',
-      data: review
+      data: updatedReview
     });
   } catch (error) {
+    console.error('Error updating review:', error);
     next(error);
   }
 };
@@ -144,6 +173,7 @@ exports.deleteReview = async (req, res, next) => {
       message: 'Review deleted successfully'
     });
   } catch (error) {
+    console.error('Error deleting review:', error);
     next(error);
   }
 };
@@ -164,9 +194,9 @@ exports.markHelpful = async (req, res, next) => {
     }
 
     if (helpful) {
-      await review.increment('helpfulCount');
+      await review.increment('helpful');
     } else {
-      await review.increment('notHelpfulCount');
+      await review.increment('notHelpful');
     }
 
     res.json({
@@ -174,26 +204,41 @@ exports.markHelpful = async (req, res, next) => {
       message: 'Feedback recorded'
     });
   } catch (error) {
+    console.error('Error marking review as helpful:', error);
     next(error);
   }
 };
 
 // Helper function to update course rating
 async function updateCourseRating(courseId) {
-  const result = await Review.findOne({
-    where: { courseId },
-    attributes: [
-      [db.fn('AVG', db.col('rating')), 'avgRating'],
-      [db.fn('COUNT', db.col('id')), 'reviewCount']
-    ],
-    raw: true
-  });
-
-  const course = await Course.findByPk(courseId);
-  if (course) {
-    await course.update({
-      averageRating: parseFloat(result.avgRating) || 0,
-      reviewCount: parseInt(result.reviewCount) || 0
+  try {
+    const reviews = await Review.findAll({
+      where: { courseId },
+      attributes: ['rating']
     });
+
+    if (reviews.length === 0) {
+      const course = await Course.findByPk(courseId);
+      if (course) {
+        await course.update({
+          averageRating: 0,
+          reviewCount: 0
+        });
+      }
+      return;
+    }
+
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const avgRating = totalRating / reviews.length;
+
+    const course = await Course.findByPk(courseId);
+    if (course) {
+      await course.update({
+        averageRating: parseFloat(avgRating.toFixed(1)),
+        reviewCount: reviews.length
+      });
+    }
+  } catch (error) {
+    console.error('Error updating course rating:', error);
   }
 }
