@@ -3,17 +3,29 @@ const { sequelize } = require('../config/db');
 
 const QuizSubmission = sequelize.define('QuizSubmission', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
-  userId: {
-    type: DataTypes.UUID,
-    allowNull: false
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
   quizId: {
-    type: DataTypes.UUID,
-    allowNull: false
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'quizzes',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
   },
   answers: {
     type: DataTypes.JSONB,
@@ -22,24 +34,20 @@ const QuizSubmission = sequelize.define('QuizSubmission', {
   },
   score: {
     type: DataTypes.FLOAT,
-    allowNull: false
+    allowNull: true
   },
   passed: {
     type: DataTypes.BOOLEAN,
-    allowNull: false
+    defaultValue: false
   },
   timeSpent: {
     type: DataTypes.INTEGER,
+    allowNull: true,
     comment: 'Time spent in seconds'
   },
-  aiProctoring: {
-    type: DataTypes.JSONB,
-    allowNull: true,
-    comment: 'AI proctoring data from frontend'
-  },
-  attempt: {
-    type: DataTypes.INTEGER,
-    defaultValue: 1
+  submittedAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   }
 }, {
   tableName: 'quiz_submissions',

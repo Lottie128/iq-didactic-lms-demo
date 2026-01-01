@@ -3,36 +3,53 @@ const { sequelize } = require('../config/db');
 
 const Comment = sequelize.define('Comment', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
   discussionId: {
-    type: DataTypes.UUID,
-    allowNull: false
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'discussions',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
   },
   userId: {
-    type: DataTypes.UUID,
-    allowNull: false
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
+  },
+  parentId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'comments',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
   },
   content: {
     type: DataTypes.TEXT,
     allowNull: false
   },
-  parentId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    comment: 'For threaded comments'
-  },
   upvotes: {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  bestAnswer: {
+  isBestAnswer: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-  edited: {
+  isEdited: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   }

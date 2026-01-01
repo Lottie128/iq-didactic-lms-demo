@@ -3,17 +3,33 @@ const { sequelize } = require('../config/db');
 
 const Discussion = sequelize.define('Discussion', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
   courseId: {
-    type: DataTypes.UUID,
-    allowNull: false
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
   },
   userId: {
-    type: DataTypes.UUID,
-    allowNull: false
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
+  },
+  type: {
+    type: DataTypes.ENUM('question', 'discussion', 'announcement'),
+    defaultValue: 'discussion'
   },
   title: {
     type: DataTypes.STRING,
@@ -27,15 +43,15 @@ const Discussion = sequelize.define('Discussion', {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  views: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0
-  },
-  solved: {
+  isPinned: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-  pinned: {
+  isClosed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  hasBestAnswer: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   }
