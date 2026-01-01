@@ -6,9 +6,14 @@ import NotificationCenter from '../components/NotificationCenter';
 import ThemeToggler from '../components/ThemeToggler';
 import './Dashboard.css';
 
+// Default course image
+const DEFAULT_COURSE_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200"%3E%3Crect fill="%23764ba2" width="400" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="32" fill="%23ffffff"%3ECourse%3C/text%3E%3C/svg%3E';
+
 const TeacherDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [courses, setCourses] = useState([]);
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -22,42 +27,46 @@ const TeacherDashboard = ({ user, onLogout }) => {
     loadTeacherData();
   }, []);
 
-  const loadTeacherData = async () => {
+  const loadTeacherData = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
 
       // Fetch real analytics from API
       const token = localStorage.getItem('token');
-      const analyticsResponse = await fetch(
-        `${process.env.REACT_APP_API_URL || 'https://iq-didactic-lms-demo-production.up.railway.app/api'}/analytics/teacher`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://iq-didactic-lms-demo-production.up.railway.app/api';
+      
+      const analyticsResponse = await fetch(`${apiUrl}/analytics/teacher`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
+      });
 
       if (analyticsResponse.ok) {
         const { data } = await analyticsResponse.json();
         
-        // Set real stats from API
         setStats({
           totalStudents: data.overview.totalStudents || 0,
           totalCourses: data.overview.totalCourses || 0,
           totalEnrollments: data.overview.totalEnrollments || 0,
-          avgCompletion: data.overview.avgCompletion || 0,
+          avgCompletion: Math.round(data.overview.avgCompletion || 0),
           revenue: data.overview.revenue || '0.00'
         });
 
-        // Set course performance data
         setCourses(data.coursePerformance || []);
       } else {
-        // Fallback: Fetch courses the old way if analytics fails
+        // Fallback to basic courses
         const coursesResponse = await courseAPI.getMyCourses();
         const teacherCourses = coursesResponse.data || [];
         
-        const totalEnrollments = teacherCourses.reduce((sum, course) => sum + (course.enrollmentCount || 0), 0);
+        const totalEnrollments = teacherCourses.reduce((sum, course) => 
+          sum + (course.enrollmentCount || 0), 0
+        );
         
         setStats({
           totalStudents: totalEnrollments,
@@ -72,14 +81,18 @@ const TeacherDashboard = ({ user, onLogout }) => {
 
     } catch (error) {
       console.error('Error loading teacher data:', error);
+      setError('Failed to load dashboard data. Please try again.');
       
-      // Fallback to basic course data
+      // Final fallback
       try {
         const coursesResponse = await courseAPI.getMyCourses();
         const teacherCourses = coursesResponse.data || [];
         setCourses(teacherCourses);
         
-        const totalEnrollments = teacherCourses.reduce((sum, course) => sum + (course.enrollmentCount || 0), 0);
+        const totalEnrollments = teacherCourses.reduce((sum, course) => 
+          sum + (course.enrollmentCount || 0), 0
+        );
+        
         setStats({
           totalStudents: totalEnrollments,
           totalCourses: teacherCourses.length,
@@ -92,7 +105,22 @@ const TeacherDashboard = ({ user, onLogout }) => {
       }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    loadTeacherData(true);
+  };
+
+  const handleImageError = (e) => {
+    e.target.src = DEFAULT_COURSE_IMAGE;
+  };
+
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substr(0, text.lastIndexOf(' ', maxLength)) + '...';
   };
 
   const getGreeting = () => {
@@ -106,8 +134,9 @@ const TeacherDashboard = ({ user, onLogout }) => {
     return (
       <div className="dashboard-root">
         <div className="dashboard-bg" />
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          <div className="loader">Loading teacher dashboard...</div>
+        <div className="loading-container-center">
+          <div className="spinner"></div>
+          <p>Loading teacher dashboard...</p>
         </div>
       </div>
     );
@@ -116,6 +145,13 @@ const TeacherDashboard = ({ user, onLogout }) => {
   return (
     <div className="dashboard-root">
       <div className="dashboard-bg" />
+
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="error-close">×</button>
+        </div>
+      )}
 
       <header className="dashboard-header glass">
         <div className="header-left">
@@ -132,11 +168,11 @@ const TeacherDashboard = ({ user, onLogout }) => {
           </button>
           <ThemeToggler />
           <NotificationCenter />
-          <div className="user-menu glass" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
+          <div className="user-menu glass clickable" onClick={() => navigate('/profile')}>
             <div className="user-avatar">{user.name.charAt(0)}</div>
             <span>{user.name}</span>
           </div>
-          <button className="btn btn-secondary" onClick={onLogout}>
+          <button className="btn btn-secondary" onClick={onLogout} aria-label="Logout">
             <LogOut size={16} />
           </button>
         </nav>
@@ -213,7 +249,7 @@ const TeacherDashboard = ({ user, onLogout }) => {
 
           {courses.length === 0 ? (
             <div className="empty-state glass-strong">
-              <BookOpen size={48} style={{ opacity: 0.3 }} />
+              <BookOpen size={48} />
               <h3>No courses yet</h3>
               <p>Create your first course to start teaching!</p>
               <button className="btn btn-primary" onClick={() => navigate('/create-course')}>
@@ -228,13 +264,16 @@ const TeacherDashboard = ({ user, onLogout }) => {
                     <div className="course-category">{course.category}</div>
                     <div className="course-badge">{course.students || course.enrollmentCount || 0} students</div>
                   </div>
-                  {course.thumbnail && (
-                    <div className="course-thumbnail">
-                      <img src={course.thumbnail} alt={course.title} />
-                    </div>
-                  )}
+                  <div className="course-thumbnail">
+                    <img 
+                      src={course.thumbnail || DEFAULT_COURSE_IMAGE} 
+                      alt={course.title}
+                      onError={handleImageError}
+                      loading="lazy"
+                    />
+                  </div>
                   <h3>{course.title}</h3>
-                  <p className="course-desc">{course.description?.substring(0, 100)}...</p>
+                  <p className="course-desc">{truncateText(course.description, 100)}</p>
                   <div className="course-meta">
                     <span><Video size={14} /> {course.lessons || course.videos?.length || 0} lessons</span>
                     <span><Users size={14} /> {course.students || course.enrollmentCount || 0}</span>
@@ -248,7 +287,10 @@ const TeacherDashboard = ({ user, onLogout }) => {
                       <Eye size={14} />
                       View
                     </button>
-                    <button className="btn btn-secondary" onClick={() => navigate(`/edit-course/${course.id}`)}>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => navigate(`/edit-course/${course.id}`)}
+                    >
                       <Edit size={14} />
                       Edit
                     </button>
@@ -260,7 +302,10 @@ const TeacherDashboard = ({ user, onLogout }) => {
         </section>
 
         <section className="admin-grid">
-          <div className="admin-card glass-strong scale-in" onClick={() => navigate('/teacher/students')} style={{ cursor: 'pointer' }}>
+          <div 
+            className="admin-card glass-strong scale-in clickable" 
+            onClick={() => navigate('/teacher/students')}
+          >
             <div className="admin-card-header">
               <UserCog size={24} />
               <h3>Student Management</h3>
@@ -280,7 +325,13 @@ const TeacherDashboard = ({ user, onLogout }) => {
                 <span className="stat-lbl">Enrollments</span>
               </div>
             </div>
-            <button className="btn btn-secondary" style={{ marginTop: '15px' }} onClick={(e) => { e.stopPropagation(); navigate('/teacher/students'); }}>
+            <button 
+              className="btn btn-secondary btn-mt" 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                navigate('/teacher/students'); 
+              }}
+            >
               Manage Students
             </button>
           </div>
