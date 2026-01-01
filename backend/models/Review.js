@@ -3,17 +3,29 @@ const { sequelize } = require('../config/db');
 
 const Review = sequelize.define('Review', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
   userId: {
-    type: DataTypes.UUID,
-    allowNull: false
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
   },
   courseId: {
-    type: DataTypes.UUID,
-    allowNull: false
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
   },
   rating: {
     type: DataTypes.INTEGER,
