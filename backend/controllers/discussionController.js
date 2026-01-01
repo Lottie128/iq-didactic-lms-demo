@@ -14,6 +14,7 @@ exports.getDiscussions = async (req, res, next) => {
       include: [
         {
           model: User,
+          as: 'user',
           attributes: ['id', 'name', 'avatar']
         }
       ],
@@ -33,6 +34,7 @@ exports.getDiscussions = async (req, res, next) => {
       data: discussions
     });
   } catch (error) {
+    console.error('Error fetching discussions:', error);
     next(error);
   }
 };
@@ -46,6 +48,7 @@ exports.getDiscussionById = async (req, res, next) => {
       include: [
         {
           model: User,
+          as: 'user',
           attributes: ['id', 'name', 'avatar']
         }
       ]
@@ -67,6 +70,7 @@ exports.getDiscussionById = async (req, res, next) => {
       include: [
         {
           model: User,
+          as: 'user',
           attributes: ['id', 'name', 'avatar']
         },
         {
@@ -75,6 +79,7 @@ exports.getDiscussionById = async (req, res, next) => {
           include: [
             {
               model: User,
+              as: 'user',
               attributes: ['id', 'name', 'avatar']
             }
           ]
@@ -91,6 +96,7 @@ exports.getDiscussionById = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching discussion:', error);
     next(error);
   }
 };
@@ -109,12 +115,24 @@ exports.createDiscussion = async (req, res, next) => {
       content
     });
 
+    // Fetch with user data
+    const discussionWithUser = await Discussion.findByPk(discussion.id, {
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'avatar']
+        }
+      ]
+    });
+
     res.status(201).json({
       success: true,
       message: 'Discussion created successfully',
-      data: discussion
+      data: discussionWithUser
     });
   } catch (error) {
+    console.error('Error creating discussion:', error);
     next(error);
   }
 };
@@ -142,12 +160,24 @@ exports.updateDiscussion = async (req, res, next) => {
 
     await discussion.update(req.body);
 
+    // Fetch with user data
+    const updatedDiscussion = await Discussion.findByPk(discussion.id, {
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'avatar']
+        }
+      ]
+    });
+
     res.json({
       success: true,
       message: 'Discussion updated successfully',
-      data: discussion
+      data: updatedDiscussion
     });
   } catch (error) {
+    console.error('Error updating discussion:', error);
     next(error);
   }
 };
@@ -180,6 +210,7 @@ exports.deleteDiscussion = async (req, res, next) => {
       message: 'Discussion deleted successfully'
     });
   } catch (error) {
+    console.error('Error deleting discussion:', error);
     next(error);
   }
 };
@@ -202,9 +233,11 @@ exports.upvoteDiscussion = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Upvoted successfully'
+      message: 'Upvoted successfully',
+      data: { upvotes: discussion.upvotes + 1 }
     });
   } catch (error) {
+    console.error('Error upvoting discussion:', error);
     next(error);
   }
 };
@@ -223,12 +256,24 @@ exports.createComment = async (req, res, next) => {
       parentId: parentId || null
     });
 
+    // Fetch with user data
+    const commentWithUser = await Comment.findByPk(comment.id, {
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'avatar']
+        }
+      ]
+    });
+
     res.status(201).json({
       success: true,
       message: 'Comment added successfully',
-      data: comment
+      data: commentWithUser
     });
   } catch (error) {
+    console.error('Error creating comment:', error);
     next(error);
   }
 };
@@ -256,12 +301,24 @@ exports.updateComment = async (req, res, next) => {
 
     await comment.update(req.body);
 
+    // Fetch with user data
+    const updatedComment = await Comment.findByPk(comment.id, {
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'avatar']
+        }
+      ]
+    });
+
     res.json({
       success: true,
       message: 'Comment updated successfully',
-      data: comment
+      data: updatedComment
     });
   } catch (error) {
+    console.error('Error updating comment:', error);
     next(error);
   }
 };
@@ -294,6 +351,7 @@ exports.deleteComment = async (req, res, next) => {
       message: 'Comment deleted successfully'
     });
   } catch (error) {
+    console.error('Error deleting comment:', error);
     next(error);
   }
 };
@@ -316,9 +374,11 @@ exports.upvoteComment = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Upvoted successfully'
+      message: 'Upvoted successfully',
+      data: { upvotes: comment.upvotes + 1 }
     });
   } catch (error) {
+    console.error('Error upvoting comment:', error);
     next(error);
   }
 };
@@ -362,6 +422,7 @@ exports.markBestAnswer = async (req, res, next) => {
       message: 'Marked as best answer'
     });
   } catch (error) {
+    console.error('Error marking best answer:', error);
     next(error);
   }
 };
