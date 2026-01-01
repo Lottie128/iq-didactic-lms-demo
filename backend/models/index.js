@@ -8,6 +8,7 @@ const Quiz = require('./Quiz');
 const QuizSubmission = require('./QuizSubmission');
 const Discussion = require('./Discussion');
 const Comment = require('./Comment');
+const Notification = require('./Notification');
 
 // Define associations
 
@@ -74,6 +75,10 @@ Comment.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Comment.hasMany(Comment, { foreignKey: 'parentId', as: 'replies' });
 Comment.belongsTo(Comment, { foreignKey: 'parentId', as: 'parent' });
 
+// User - Notification
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 module.exports = {
   User,
   Course,
@@ -84,5 +89,6 @@ module.exports = {
   Quiz,
   QuizSubmission,
   Discussion,
-  Comment
+  Comment,
+  Notification
 };
