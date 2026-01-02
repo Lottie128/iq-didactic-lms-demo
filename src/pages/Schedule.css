@@ -1,177 +1,111 @@
-.schedule-root {
+.schedule-page {
   min-height: 100vh;
-  background: #000;
-  color: #fff;
-  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding-bottom: 60px;
 }
 
-.schedule-main {
-  padding: 24px 32px 60px;
-  position: relative;
-  z-index: 1;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.schedule-grid {
-  display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 24px;
-}
-
-.calendar-section {
-  padding: 24px;
-  border-radius: 20px;
-  height: fit-content;
-  position: sticky;
-  top: 120px;
-}
-
-.calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.calendar-header h3 {
-  font-size: 18px;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-}
-
-.calendar-day-header {
-  font-size: 11px;
-  text-align: center;
-  opacity: 0.6;
-  padding: 8px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.calendar-day {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.calendar-day.active {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.calendar-day.active:hover {
+.schedule-header {
   background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.calendar-day.has-event::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #3b82f6;
-}
-
-.events-section h3 {
-  font-size: 24px;
-  margin-bottom: 24px;
-}
-
-.events-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.event-card {
-  padding: 20px;
-  border-radius: 16px;
+.schedule-page .page-title {
+  color: #fff;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 16px;
-  border-left: 4px solid;
+  margin-bottom: 0.5rem;
 }
 
-.event-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+.create-event-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 2px solid #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.create-event-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.upcoming-card,
+.filter-card,
+.schedule-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.upcoming-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.upcoming-item {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s ease;
+}
+
+.upcoming-item:last-child {
+  border-bottom: none;
+}
+
+.upcoming-item:hover {
+  background: #f8f9fa;
+}
+
+.filter-option {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  margin-bottom: 0.5rem;
 }
 
-.event-details {
-  flex: 1;
+.filter-option:hover {
+  background: #f8f9fa;
 }
 
-.event-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.event-header h4 {
-  font-size: 16px;
-}
-
-.event-type {
-  font-size: 11px;
-  text-transform: uppercase;
+.filter-option.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
   font-weight: 600;
-  letter-spacing: 0.05em;
 }
 
-.event-course {
-  font-size: 13px;
-  opacity: 0.8;
-  margin-bottom: 4px;
+.schedule-card .nav-tabs {
+  border-bottom: none;
 }
 
-.event-instructor {
-  font-size: 12px;
-  opacity: 0.6;
-  margin-bottom: 8px;
+.schedule-card .nav-link {
+  color: #6c757d;
+  border: none;
+  padding: 1rem 1.5rem;
+  transition: all 0.3s ease;
 }
 
-.event-time {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  opacity: 0.7;
+.schedule-card .nav-link:hover {
+  color: #667eea;
+  background: #f8f9fa;
 }
 
-@media (max-width: 1024px) {
-  .schedule-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .calendar-section {
-    position: static;
-  }
+.schedule-card .nav-link.active {
+  color: #667eea;
+  background: transparent;
+  border-bottom: 3px solid #667eea;
+  font-weight: 600;
 }
 
-@media (max-width: 768px) {
-  .schedule-main {
-    padding: 16px;
-  }
-
-  .event-card {
-    flex-direction: column;
-    align-items: flex-start;
+@media (max-width: 991px) {
+  .upcoming-card,
+  .filter-card {
+    margin-bottom: 1.5rem;
   }
 }
