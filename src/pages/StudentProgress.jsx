@@ -1,51 +1,115 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, Award, Clock, Target, Download, Share2, LogOut, Trophy, Flame, Star } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Award, Clock, Target, Download, Share2, LogOut, Trophy, Flame, Star, Loader } from 'lucide-react';
+import { userAPI, courseAPI, certificateAPI, achievementAPI, progressAPI } from '../services/api';
 import './StudentProgress.css';
 
 const StudentProgress = ({ user, onLogout }) => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    enrolledCourses: 0,
+    completedCourses: 0,
+    xp: 0,
+    level: 1,
+    streak: 0,
+    totalHours: 0
+  });
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [certificates, setCertificates] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [allAchievements, setAllAchievements] = useState([]);
 
-  const progressData = {
-    totalCourses: 8,
-    completedCourses: 3,
-    inProgress: 2,
-    totalHours: 124,
-    thisWeek: 8,
-    averageScore: 92,
-    streak: 7,
-    certificates: 3,
-    rank: 12,
-    points: 2840
+  useEffect(() => {
+    loadProgressData();
+  }, []);
+
+  const loadProgressData = async () => {
+    try {
+      setLoading(true);
+
+      // Load user stats
+      const statsResponse = await userAPI.getUserStats();
+      setStats(statsResponse.data);
+
+      // Load enrolled courses with progress
+      const enrolledResponse = await courseAPI.getEnrolledCourses();
+      const coursesData = enrolledResponse.data.map(enrollment => ({
+        id: enrollment.Course.id,
+        title: enrollment.Course.title,
+        completion: enrollment.progress || 0,
+        score: enrollment.averageScore || 0,
+        timeSpent: enrollment.timeSpent || 0,
+        status: enrollment.progress === 100 ? 'completed' : 'in-progress',
+        thumbnail: enrollment.Course.thumbnail
+      }));
+      setEnrolledCourses(coursesData);
+
+      // Load certificates
+      const certsResponse = await certificateAPI.getUserCertificates();
+      setCertificates(certsResponse.data || []);
+
+      // Load achievements
+      const userAchievements = await achievementAPI.getUserAchievements();
+      setAchievements(userAchievements.data || []);
+
+      const allAchievementsResponse = await achievementAPI.getAllAchievements();
+      setAllAchievements(allAchievementsResponse.data || []);
+
+    } catch (error) {
+      console.error('Error loading progress data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const courseProgress = [
-    { id: 1, title: 'Machine Learning Basics', completion: 85, score: 94, timeSpent: 18, status: 'in-progress' },
-    { id: 2, title: 'React Development', completion: 100, score: 96, timeSpent: 24, status: 'completed', certificateId: 'CERT-001' },
-    { id: 3, title: 'Python Programming', completion: 100, score: 88, timeSpent: 32, status: 'completed', certificateId: 'CERT-002' },
-    { id: 4, title: 'Data Science', completion: 45, score: 90, timeSpent: 12, status: 'in-progress' },
-    { id: 5, title: 'JavaScript Advanced', completion: 100, score: 92, timeSpent: 28, status: 'completed', certificateId: 'CERT-003' }
-  ];
-
-  const recentActivity = [
-    { date: '2024-12-08', activity: 'Completed quiz: ML Fundamentals', points: 50 },
-    { date: '2024-12-07', activity: 'Watched 3 videos in React Development', points: 30 },
-    { date: '2024-12-06', activity: 'Earned badge: Quiz Master', points: 100 },
-    { date: '2024-12-05', activity: 'Completed course: Python Programming', points: 200 }
-  ];
-
-  const badges = [
-    { id: 1, name: 'Early Bird', icon: '🌅', earned: true, date: '2024-11-15' },
-    { id: 2, name: 'Quiz Master', icon: '🎯', earned: true, date: '2024-12-06' },
-    { id: 3, name: '7-Day Streak', icon: '🔥', earned: true, date: '2024-12-08' },
-    { id: 4, name: 'Certificate Collector', icon: '🎓', earned: true, date: '2024-12-01' },
-    { id: 5, name: 'Fast Learner', icon: '⚡', earned: false },
-    { id: 6, name: 'Community Helper', icon: '🤝', earned: false }
-  ];
-
-  const downloadCertificate = (certId) => {
-    alert(`Downloading certificate ${certId}... (Demo)`);
+  const downloadCertificate = async (certId) => {
+    try {
+      await certificateAPI.downloadCertificate(certId);
+    } catch (error) {
+      console.error('Error downloading certificate:', error);
+      alert('Failed to download certificate');
+    }
   };
+
+  const formatTime = (hours) => {
+    if (hours < 1) return `${Math.round(hours * 60)} min`;
+    return `${Math.round(hours)}h`;
+  };
+
+  // Map achievements to badge format
+  const badges = allAchievements.map(achievement => {
+    const earned = achievements.some(ua => ua.achievementId === achievement.id);
+    const userAch = achievements.find(ua => ua.achievementId === achievement.id);
+    return {
+      id: achievement.id,
+      name: achievement.name,
+      icon: achievement.icon || '🏆',
+      earned,
+      date: earned && userAch ? new Date(userAch.unlockedAt).toLocaleDateString() : null
+    };
+  });
+
+  if (loading) {
+    return (
+      <div className="progress-root">
+        <div className="dashboard-bg" />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <Loader className="spin" size={32} />
+            <p style={{ marginTop: '16px' }}>Loading your progress...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const completedCourses = enrolledCourses.filter(c => c.status === 'completed');
+  const inProgressCourses = enrolledCourses.filter(c => c.status === 'in-progress');
+  const averageScore = enrolledCourses.length > 0 
+    ? Math.round(enrolledCourses.reduce((sum, c) => sum + c.score, 0) / enrolledCourses.length)
+    : 0;
+  const totalHours = enrolledCourses.reduce((sum, c) => sum + (c.timeSpent || 0), 0);
 
   return (
     <div className="progress-root">
@@ -77,28 +141,28 @@ const StudentProgress = ({ user, onLogout }) => {
           <div className="stat-card glass">
             <Target size={24} />
             <div>
-              <p className="stat-value">{progressData.completedCourses}/{progressData.totalCourses}</p>
+              <p className="stat-value">{completedCourses.length}/{stats.enrolledCourses}</p>
               <p className="stat-label">Courses Completed</p>
             </div>
           </div>
           <div className="stat-card glass">
             <Clock size={24} />
             <div>
-              <p className="stat-value">{progressData.totalHours}h</p>
+              <p className="stat-value">{Math.round(totalHours)}h</p>
               <p className="stat-label">Total Hours</p>
             </div>
           </div>
           <div className="stat-card glass">
             <Star size={24} />
             <div>
-              <p className="stat-value">{progressData.averageScore}%</p>
+              <p className="stat-value">{averageScore}%</p>
               <p className="stat-label">Average Score</p>
             </div>
           </div>
           <div className="stat-card glass highlight">
             <Flame size={24} />
             <div>
-              <p className="stat-value">{progressData.streak} Days</p>
+              <p className="stat-value">{stats.streak || 0} Days</p>
               <p className="stat-label">Learning Streak 🔥</p>
             </div>
           </div>
@@ -114,27 +178,31 @@ const StudentProgress = ({ user, onLogout }) => {
               <div className="game-stat">
                 <div className="game-icon">🏆</div>
                 <div>
-                  <p className="game-value">{progressData.points.toLocaleString()}</p>
+                  <p className="game-value">{(stats.xp || 0).toLocaleString()}</p>
                   <p className="game-label">Total Points</p>
                 </div>
               </div>
               <div className="game-stat">
-                <div className="game-icon">🎖️</div>
+                <div className="game-icon">📊</div>
                 <div>
-                  <p className="game-value">#{progressData.rank}</p>
-                  <p className="game-label">Global Rank</p>
+                  <p className="game-value">Level {stats.level || 1}</p>
+                  <p className="game-label">Current Level</p>
                 </div>
               </div>
             </div>
-            <div className="badges-grid">
-              {badges.map(badge => (
-                <div key={badge.id} className={`badge-item ${badge.earned ? 'earned' : 'locked'}`}>
-                  <div className="badge-icon">{badge.icon}</div>
-                  <p className="badge-name">{badge.name}</p>
-                  {badge.earned && <span className="badge-date">{badge.date}</span>}
-                </div>
-              ))}
-            </div>
+            {badges.length > 0 ? (
+              <div className="badges-grid">
+                {badges.map(badge => (
+                  <div key={badge.id} className={`badge-item ${badge.earned ? 'earned' : 'locked'}`}>
+                    <div className="badge-icon">{badge.icon}</div>
+                    <p className="badge-name">{badge.name}</p>
+                    {badge.earned && badge.date && <span className="badge-date">{badge.date}</span>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ textAlign: 'center', opacity: 0.6, padding: '20px' }}>No achievements unlocked yet</p>
+            )}
           </section>
 
           <section className="progress-card glass-strong">
@@ -142,27 +210,37 @@ const StudentProgress = ({ user, onLogout }) => {
               <Award size={24} />
               <h3>Certificates Earned</h3>
             </div>
-            <div className="certificates-list">
-              {courseProgress.filter(c => c.certificateId).map(course => (
-                <div key={course.id} className="certificate-item glass">
-                  <div className="cert-info">
-                    <Award size={20} />
-                    <div>
-                      <p className="cert-title">{course.title}</p>
-                      <p className="cert-id">ID: {course.certificateId}</p>
+            {certificates.length > 0 ? (
+              <div className="certificates-list">
+                {certificates.map(cert => (
+                  <div key={cert.id} className="certificate-item glass">
+                    <div className="cert-info">
+                      <Award size={20} />
+                      <div>
+                        <p className="cert-title">{cert.Course?.title || 'Course Certificate'}</p>
+                        <p className="cert-id">#{cert.certificateNumber}</p>
+                      </div>
+                    </div>
+                    <div className="cert-actions">
+                      <button 
+                        className="btn-icon-small" 
+                        onClick={() => downloadCertificate(cert.id)}
+                        title="Download"
+                      >
+                        <Download size={14} />
+                      </button>
+                      <button className="btn-icon-small" title="Share">
+                        <Share2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <div className="cert-actions">
-                    <button className="btn-icon-small" onClick={() => downloadCertificate(course.certificateId)}>
-                      <Download size={14} />
-                    </button>
-                    <button className="btn-icon-small">
-                      <Share2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ textAlign: 'center', opacity: 0.6, padding: '40px' }}>
+                No certificates yet. Complete courses to earn certificates!
+              </p>
+            )}
           </section>
 
           <section className="progress-card glass-strong full-width">
@@ -170,52 +248,40 @@ const StudentProgress = ({ user, onLogout }) => {
               <TrendingUp size={24} />
               <h3>Course Progress</h3>
             </div>
-            <div className="course-progress-list">
-              {courseProgress.map(course => (
-                <div key={course.id} className="progress-item">
-                  <div className="progress-info">
-                    <div className="progress-header">
-                      <h4>{course.title}</h4>
-                      <span className={`status-badge ${course.status}`}>
-                        {course.status === 'completed' ? '✓ Completed' : 'In Progress'}
-                      </span>
+            {enrolledCourses.length > 0 ? (
+              <div className="course-progress-list">
+                {enrolledCourses.map(course => (
+                  <div key={course.id} className="progress-item">
+                    <div className="progress-info">
+                      <div className="progress-header">
+                        <h4>{course.title}</h4>
+                        <span className={`status-badge ${course.status}`}>
+                          {course.status === 'completed' ? '✓ Completed' : 'In Progress'}
+                        </span>
+                      </div>
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${course.completion}%` }} />
+                      </div>
+                      <div className="progress-meta">
+                        <span>{course.completion}% complete</span>
+                        {course.score > 0 && <span>Score: {course.score}%</span>}
+                        {course.timeSpent > 0 && <span>{formatTime(course.timeSpent)} spent</span>}
+                      </div>
                     </div>
-                    <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${course.completion}%` }} />
-                    </div>
-                    <div className="progress-meta">
-                      <span>{course.completion}% complete</span>
-                      <span>Score: {course.score}%</span>
-                      <span>{course.timeSpent}h spent</span>
-                    </div>
-                  </div>
-                  {course.status === 'completed' && (
-                    <button className="btn btn-secondary" onClick={() => downloadCertificate(course.certificateId)}>
-                      <Award size={14} />
-                      Certificate
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => navigate(`/course/${course.id}`)}
+                    >
+                      {course.status === 'completed' ? 'Review' : 'Continue'}
                     </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="progress-card glass-strong">
-            <div className="card-header">
-              <Clock size={24} />
-              <h3>Recent Activity</h3>
-            </div>
-            <div className="activity-list">
-              {recentActivity.map((item, idx) => (
-                <div key={idx} className="activity-item">
-                  <div className="activity-date">{item.date}</div>
-                  <div className="activity-content">
-                    <p>{item.activity}</p>
-                    <span className="activity-points">+{item.points} pts</span>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ textAlign: 'center', opacity: 0.6, padding: '60px' }}>
+                No enrolled courses yet. Start learning today!
+              </p>
+            )}
           </section>
         </div>
       </main>
