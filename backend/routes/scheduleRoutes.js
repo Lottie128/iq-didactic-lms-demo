@@ -11,7 +11,7 @@ const {
   deleteSchedule,
   getSchedulesByDateRange
 } = require('../controllers/scheduleController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/auth');
 
 // All routes require authentication
 router.use(protect);
