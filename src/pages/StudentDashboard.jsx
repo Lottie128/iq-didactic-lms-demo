@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Award, TrendingUp, Clock, Target, Search, Filter, Play, Star, Users } from 'lucide-react';
+import { BookOpen, Award, TrendingUp, Clock, Target, Search, Play, Star, Users } from 'lucide-react';
 import Layout from '../components/Layout';
-import { courseAPI, userAPI, progressAPI } from '../services/api';
+import { courseAPI, userAPI } from '../services/api';
 
 // Default course image when thumbnail is missing
 const DEFAULT_COURSE_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200"%3E%3Crect fill="%23667eea" width="400" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="32" fill="%23ffffff"%3ECourse%3C/text%3E%3C/svg%3E';
@@ -19,6 +19,7 @@ const StudentDashboard = ({ user, onLogout }) => {
 
   useEffect(() => {
     loadDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDashboardData = async () => {
@@ -32,7 +33,7 @@ const StudentDashboard = ({ user, onLogout }) => {
 
       // Load enrolled courses
       const enrolledResponse = await courseAPI.getEnrolledCourses();
-      const enrolledData = enrolledResponse.data.map(enrollment => ({
+      const enrolledData = (enrolledResponse.data || []).map(enrollment => ({
         ...enrollment.Course,
         progress: enrollment.progress,
         lastAccessed: enrollment.lastAccessedAt
@@ -40,8 +41,8 @@ const StudentDashboard = ({ user, onLogout }) => {
       setEnrolledCourses(enrolledData);
 
       // Load all available courses
-      const coursesResponse = await courseAPI.getAllCourses({ page: 1, limit: 20 });
-      setAllCourses(coursesResponse.data);
+      const coursesResponse = await courseAPI.getAllCourses({ page: 1, limit: 50 });
+      setAllCourses(coursesResponse.data || []);
 
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -56,7 +57,7 @@ const StudentDashboard = ({ user, onLogout }) => {
       await courseAPI.enrollCourse(courseId);
       await loadDashboardData();
     } catch (error) {
-      setError(error.message || 'Failed to enroll in course');
+      setError(error?.message || 'Failed to enroll in course');
     }
   };
 
@@ -70,12 +71,22 @@ const StudentDashboard = ({ user, onLogout }) => {
     return text.substr(0, text.lastIndexOf(' ', maxLength)) + '...';
   };
 
-  const categories = ['All', 'Programming', 'Design', 'Business', 'Marketing', 'Photography'];
+  // Build categories dynamically from real course data
+  const categories = useMemo(() => {
+    const set = new Set();
+    (allCourses || []).forEach(c => {
+      if (c?.category) set.add(c.category);
+    });
+    return ['All', ...Array.from(set).sort()];
+  }, [allCourses]);
 
   const filteredCourses = useMemo(() => {
-    return allCourses.filter(course => {
-      const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           course.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return (allCourses || []).filter(course => {
+      const title = (course.title || '').toLowerCase();
+      const desc = (course.description || '').toLowerCase();
+      const q = searchQuery.toLowerCase();
+
+      const matchesSearch = title.includes(q) || desc.includes(q);
       const matchesCategory = selectedCategory === 'All' || course.category === selectedCategory;
       const notEnrolled = !enrolledCourses.find(ec => ec.id === course.id);
       return matchesSearch && matchesCategory && notEnrolled;
@@ -188,7 +199,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                     onError={handleImageError}
                     loading="lazy"
                   />
-                  <div className="course-badge">{course.category}</div>
+                  <div className="course-badge">{course.category || 'General'}</div>
                 </div>
                 <div className="course-content">
                   <h3>{course.title}</h3>
@@ -274,7 +285,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                     onError={handleImageError}
                     loading="lazy"
                   />
-                  <div className="course-badge">{course.category}</div>
+                  <div className="course-badge">{course.category || 'General'}</div>
                 </div>
                 <div className="course-content">
                   <h3>{course.title}</h3>
@@ -282,7 +293,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                   <div className="course-meta">
                     <span className="course-stat">
                       <Star size={14} fill="#fbbf24" color="#fbbf24" />
-                      {course.averageRating?.toFixed(1) || '5.0'}
+                      {typeof course.averageRating === 'number' ? course.averageRating.toFixed(1) : '—'}
                     </span>
                     <span className="course-stat">
                       <Users size={14} />
@@ -290,7 +301,7 @@ const StudentDashboard = ({ user, onLogout }) => {
                     </span>
                     <span className="course-stat">
                       <Clock size={14} />
-                      {course.duration || '8 weeks'}
+                      {course.duration || '—'}
                     </span>
                   </div>
                   <div className="course-actions">
