@@ -1,0 +1,67 @@
+.schedule-form-modal .modal-content {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.schedule-form-modal .modal-header {
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.schedule-form-modal .modal-header .btn-close {
+  filter: brightness(0) invert(1);
+}
+
+.schedule-form-modal .modal-title {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+}
+
+.schedule-form-modal .modal-body {
+  padding: 2rem;
+}
+
+.schedule-form-modal .form-label {
+  font-weight: 600;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.schedule-form-modal .form-control,
+.schedule-form-modal .form-select {
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.schedule-form-modal .form-control:focus,
+.schedule-form-modal .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.schedule-form-modal .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.schedule-form-modal .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.schedule-form-modal .btn-secondary {
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
